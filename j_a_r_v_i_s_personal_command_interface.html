@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J.A.R.V.I.S. Personal Command Interface</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter & Orbitron for Stark Tech Aesthetic -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            stark: {
+              bg: '#02060d',
+              card: 'rgba(6, 18, 36, 0.75)',
+              border: 'rgba(6, 182, 212, 0.25)',
+              cyan: '#06b6d4',
+              brightCyan: '#22d3ee',
+              gold: '#f59e0b',
+              glow: 'rgba(6, 182, 212, 0.4)'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            hud: ['Orbitron', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Global HUD Styling & Glow Effects */
+    body {
+      background-color: #02060d;
+      background-image: 
+        radial-gradient(circle at 50% 35%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+        linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    .font-hud {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* Glassmorphism & Neon HUD Borders */
+    .hud-card {
+      background: rgba(6, 18, 36, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.08), inset 0 0 15px rgba(6, 182, 212, 0.03);
+    }
+
+    .hud-card-active {
+      border-color: rgba(34, 211, 238, 0.7);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.25), inset 0 0 20px rgba(6, 182, 212, 0.08);
+    }
+
+    /* Custom Glowing Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(2, 6, 13, 0.8);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(6, 182, 212, 0.4);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(34, 211, 238, 0.8);
+    }
+
+    /* Glow pulse animations */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.4)); }
+      50% { opacity: 0.9; filter: drop-shadow(0 0 18px rgba(34, 211, 238, 0.8)); }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(1000%); }
+    }
+    .hud-scanline {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.6), transparent);
+      opacity: 0.3;
+      pointer-events: none;
+      animation: scanline 8s linear infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+  <div class="hud-scanline"></div>
+
+  <!-- ==================== HEADER HUD NAVBAR ==================== -->
+  <header class="w-full px-4 py-3 border-b border-stark-border bg-stark-bg/90 backdrop-blur-md sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3">
+    <!-- Left Logo & System Status -->
+    <div class="flex items-center gap-3">
+      <div class="relative flex items-center justify-center w-10 h-10 rounded-full bg-stark-cyan/10 border border-stark-cyan/50 text-stark-brightCyan font-hud font-bold text-lg shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+        <i class="fa-solid fa-microchip animate-spin-slow"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-hud text-lg font-extrabold tracking-wider bg-gradient-to-r from-stark-brightCyan via-cyan-200 to-white bg-clip-text text-transparent">J.A.R.V.I.S.</span>
+          <span class="text-[10px] font-hud px-1.5 py-0.5 rounded bg-stark-cyan/20 border border-stark-cyan/40 text-stark-brightCyan">v4.5 PRO</span>
+        </div>
+        <p class="text-[11px] text-cyan-400/70 font-mono flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          STARK PROTOCOL ACTIVE
+        </p>
+      </div>
+    </div>
+
+    <!-- Center Mode Switcher Tabs -->
+    <div class="flex items-center bg-stark-card p-1 rounded-xl border border-stark-border">
+      <button id="navOrbBtn" onclick="switchMainView('orb')" class="px-4 py-1.5 rounded-lg text-xs font-hud font-semibold transition-all flex items-center gap-2 bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+        <i class="fa-solid fa-atom"></i> Orb Centerpiece
+      </button>
+      <button id="navDashBtn" onclick="switchMainView('dash')" class="px-4 py-1.5 rounded-lg text-xs font-hud font-semibold text-slate-400 hover:text-cyan-300 transition-all flex items-center gap-2">
+        <i class="fa-solid fa-chart-line"></i> HUD Dashboard
+      </button>
+    </div>
+
+    <!-- Right Controls & Status Modals -->
+    <div class="flex items-center gap-2">
+      <!-- Auto-Send Bridge Status Badge -->
+      <button id="bridgeStatusBtn" onclick="openModal('bridgeModal')" class="px-3 py-1.5 rounded-lg border text-xs font-hud font-semibold flex items-center gap-2 transition-all bg-emerald-950/40 border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span id="bridgeStatusText">Auto-Send: ON</span>
+      </button>
+
+      <!-- AI Brain Config Button -->
+      <button onclick="openModal('aiModal')" title="AI Brain Settings" class="w-9 h-9 rounded-lg bg-stark-card border border-stark-border hover:border-stark-brightCyan text-stark-brightCyan transition-all flex items-center justify-center">
+        <i class="fa-solid fa-brain"></i>
+      </button>
+
+      <!-- Voice Setup Button -->
+      <button onclick="openModal('voiceModal')" title="Voice Engine Settings" class="w-9 h-9 rounded-lg bg-stark-card border border-stark-border hover:border-stark-brightCyan text-stark-brightCyan transition-all flex items-center justify-center">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
+
+      <!-- Contacts Directory Button -->
+      <button onclick="openModal('contactsModal')" title="Contacts Directory" class="w-9 h-9 rounded-lg bg-stark-card border border-stark-border hover:border-stark-brightCyan text-stark-brightCyan transition-all flex items-center justify-center">
+        <i class="fa-solid fa-address-book"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT AREA ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col justify-between gap-4">
+
+    <!-- VIEW 1: FULLSCREEN ORB CENTERPIECE (DEFAULT) -->
+    <div id="orbViewContainer" class="flex-1 flex flex-col items-center justify-center min-h-[70vh] relative w-full">
+
+      <!-- Orb Top Status Indicator Pill -->
+      <div class="mb-4 flex items-center gap-3 px-4 py-1.5 rounded-full bg-stark-card border border-stark-cyan/40 text-xs font-hud text-stark-brightCyan backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+        <span id="orbStatusDot" class="w-2.5 h-2.5 rounded-full bg-stark-brightCyan animate-pulse"></span>
+        <span id="orbStatusText">JARVIS ONLINE & STANDING BY</span>
+        <span id="liveChatBadge" class="hidden text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-mono">LIVE CHAT ACTIVE</span>
+      </div>
+
+      <!-- HTML5 Canvas Animated J.A.R.V.I.S. Orb Centerpiece -->
+      <div class="relative flex items-center justify-center cursor-pointer group my-2" onclick="toggleVoiceCapture()">
+        <!-- Outer Glow Blur Background -->
+        <div id="orbGlowRing" class="absolute w-72 h-72 rounded-full bg-stark-cyan/20 blur-3xl transition-all duration-500 group-hover:bg-stark-brightCyan/30"></div>
+        
+        <!-- Interactive Canvas -->
+        <canvas id="jarvisCanvas" width="340" height="340" class="relative z-10 transition-transform duration-300 transform group-hover:scale-105"></canvas>
+        
+        <!-- Tap Hint overlay -->
+        <div class="absolute bottom-2 z-20 text-[10px] font-hud tracking-widest text-cyan-400/60 uppercase opacity-0 group-hover:opacity-100 transition-opacity">
+          Tap Orb to Speak
+        </div>
+      </div>
+
+      <!-- Speech Recognition Live Transcript & Silence Countdown Bar -->
+      <div id="voiceTranscriptContainer" class="w-full max-w-2xl px-4 py-3 my-2 rounded-xl bg-stark-card border border-stark-cyan/40 hidden flex-col gap-2">
+        <div class="flex items-center justify-between text-xs font-hud">
+          <span class="text-stark-brightCyan flex items-center gap-2">
+            <i class="fa-solid fa-microphone text-rose-400 animate-pulse"></i> Listening...
+          </span>
+          <span id="countdownText" class="text-amber-400 font-mono">Auto-sending in 5.0s</span>
+        </div>
+        
+        <!-- Live Speech Transcript Text -->
+        <p id="liveTranscriptText" class="text-sm font-sans text-slate-200 italic min-h-[1.5rem] bg-black/40 p-2.5 rounded-lg border border-slate-800">
+          Speak your command...
+        </p>
+
+        <!-- Dynamic Visual Countdown Bar -->
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+          <div id="countdownBar" class="bg-gradient-to-r from-stark-cyan via-stark-brightCyan to-emerald-400 h-full w-full transition-all duration-100"></div>
+        </div>
+
+        <!-- Voice Action Buttons -->
+        <div class="flex items-center justify-end gap-2 mt-1">
+          <button onclick="cancelVoiceCapture()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-hud transition-all">
+            Cancel
+          </button>
+          <button onclick="forceSendVoiceCapture()" class="px-3 py-1 rounded bg-stark-cyan/30 hover:bg-stark-cyan/50 text-stark-brightCyan border border-stark-cyan/50 text-xs font-hud transition-all">
+            Send Now <i class="fa-solid fa-paper-plane ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Interactive Command Bar -->
+      <div class="w-full max-w-2xl relative my-3">
+        <form id="commandForm" onsubmit="handleCommandSubmit(event)" class="flex items-center gap-2 bg-stark-card border border-stark-cyan/40 p-2 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.15)] focus-within:border-stark-brightCyan transition-all">
+          
+          <!-- Mic Toggle Button -->
+          <button type="button" id="micToggleBtn" onclick="toggleVoiceCapture()" class="w-11 h-11 rounded-xl bg-stark-cyan/10 hover:bg-stark-cyan/20 border border-stark-cyan/30 text-stark-brightCyan flex items-center justify-center transition-all">
+            <i class="fa-solid fa-microphone text-base"></i>
+          </button>
+
+          <!-- Input Textbox -->
+          <input type="text" id="commandInput" placeholder="Command JARVIS... ('send whatsapp to Papa', 'email Alex', 'open youtube')" class="flex-1 bg-transparent px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-sans" autocomplete="off" />
+
+          <!-- Live Chat Mode Toggle -->
+          <button type="button" id="liveChatToggleBtn" onclick="toggleLiveChatMode()" title="Toggle Continuous Hands-free Live Chat" class="px-3 py-2 rounded-xl text-xs font-hud border transition-all bg-slate-900/60 border-slate-700 text-slate-400 hover:text-cyan-300">
+            <i class="fa-solid fa-headset mr-1"></i> Live Mode
+          </button>
+
+          <!-- Submit Button -->
+          <button type="submit" class="w-11 h-11 rounded-xl bg-stark-cyan/30 hover:bg-stark-cyan/50 border border-stark-cyan/60 text-stark-brightCyan flex items-center justify-center transition-all shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+            <i class="fa-solid fa-paper-plane text-sm"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Dynamic Response Display Card & Dispatch Station -->
+      <div id="responseCardContainer" class="w-full max-w-2xl hidden flex-col gap-3 my-3">
+        <!-- Spoken / Output Box -->
+        <div class="hud-card p-4 rounded-2xl border-stark-cyan/40 relative">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-stark-border">
+            <span class="text-xs font-hud text-stark-brightCyan flex items-center gap-2">
+              <i class="fa-solid fa-robot"></i> J.A.R.V.I.S. RESPONSE
+            </span>
+            <span id="responseTimestamp" class="text-[10px] font-mono text-slate-400">JUST NOW</span>
+          </div>
+          <p id="responseTextOutput" class="text-sm font-sans text-slate-100 leading-relaxed whitespace-pre-line">
+            Processing command...
+          </p>
+          
+          <!-- Search Grounding Sources Pills (if present) -->
+          <div id="groundingSourcesContainer" class="hidden flex-wrap gap-1.5 mt-3 pt-2 border-t border-slate-800">
+            <span class="text-[10px] font-hud text-slate-400 flex items-center gap-1"><i class="fa-solid fa-globe"></i> SOURCES:</span>
+            <!-- Pills appended dynamically -->
+          </div>
+        </div>
+
+        <!-- SPECIAL DISPATCH CARD (WhatsApp / Gmail Composed Action Card) -->
+        <div id="dispatchCard" class="hud-card p-4 rounded-2xl border-emerald-500/40 bg-emerald-950/20 hidden flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span id="dispatchTitle" class="text-xs font-hud text-emerald-400 font-bold flex items-center gap-2">
+              <i class="fa-brands fa-whatsapp text-lg"></i> WHATSAPP DISPATCH CONTROL
+            </span>
+            <span id="dispatchStatusPill" class="text-[10px] font-hud px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              READY TO DISPATCH
+            </span>
+          </div>
+
+          <!-- Recipient & Contact Quick Update -->
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-black/40 p-2.5 rounded-xl border border-slate-800">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-slate-400 font-hud">RECIPIENT:</span>
+              <span id="dispatchRecipientName" class="font-bold text-white">Papa</span>
+              <span id="dispatchContactDetail" class="text-emerald-400 font-mono text-[11px]">(+91 9876543210)</span>
+            </div>
+            
+            <!-- Quick update contact input if number missing -->
+            <div id="missingContactBox" class="hidden items-center gap-1">
+              <input type="text" id="quickContactInput" placeholder="Enter Phone / Email..." class="px-2 py-1 text-xs bg-slate-900 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-emerald-400">
+              <button onclick="saveQuickContact()" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-hud">Save</button>
+            </div>
+          </div>
+
+          <!-- Composed Message Preview & Direct Editable Area -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-hud text-slate-400 flex items-center justify-between">
+              <span>MESSAGE BODY (EDITABLE):</span>
+              <span class="text-[10px] text-slate-500 font-sans">Clean AI Composition</span>
+            </label>
+            <textarea id="dispatchMessageArea" rows="3" class="w-full bg-slate-950/90 border border-slate-800 focus:border-emerald-500 text-xs font-sans text-slate-100 p-2.5 rounded-xl focus:outline-none resize-none leading-relaxed"></textarea>
+          </div>
+
+          <!-- Quick AI Tone & Adjust Buttons -->
+          <div class="flex flex-wrap gap-1.5 items-center">
+            <span class="text-[10px] font-hud text-slate-400">QUICK REWRITE:</span>
+            <button onclick="adjustDraft('stricter')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-hud">Make Stricter</button>
+            <button onclick="adjustDraft('polite')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-hud">More Polite</button>
+            <button onclick="adjustDraft('shorter')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-hud">Shorter</button>
+            <button onclick="adjustDraft('hindi')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-hud">Pure Hindi</button>
+          </div>
+
+          <!-- Dispatch Execution Buttons -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="copyDraftToClipboard()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-hud transition-all">
+              <i class="fa-solid fa-copy mr-1"></i> Copy
+            </button>
+            
+            <div class="flex items-center gap-2">
+              <button id="dispatchPrimaryBtn" onclick="executeDispatchNow()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-hud font-bold text-xs shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i> Send / Open WhatsApp Web
+              </button>
+            </div>
+          </div>
+          
+          <p id="bridgeTipText" class="text-[10px] text-slate-400 font-mono text-center italic">
+            Tip: Enable Auto-Send OS Bridge to press Enter automatically hands-free.
+          </p>
+        </div>
+
+        <!-- EMBEDDED YOUTUBE MEDIA PLAYER CARD -->
+        <div id="mediaPlayerCard" class="hud-card p-3 rounded-2xl border-cyan-500/40 hidden flex-col gap-2">
+          <div class="flex items-center justify-between text-xs font-hud text-stark-brightCyan">
+            <span><i class="fa-solid fa-play text-red-500 mr-1"></i> STARK MEDIA STREAM</span>
+            <button onclick="closeMediaPlayer()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-800 bg-black">
+            <iframe id="youtubeIframe" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: IRON MAN HUD DASHBOARD -->
+    <div id="dashViewContainer" class="hidden flex-1 flex-col gap-4 w-full">
+      <!-- Top Sub-Tabs -->
+      <div class="flex items-center gap-2 border-b border-stark-border pb-2">
+        <button onclick="switchDashTab('contacts')" id="dashTabContacts" class="px-4 py-2 rounded-lg text-xs font-hud font-bold bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50">
+          <i class="fa-solid fa-address-book mr-1"></i> Contacts Directory
+        </button>
+        <button onclick="switchDashTab('history')" id="dashTabHistory" class="px-4 py-2 rounded-lg text-xs font-hud font-bold text-slate-400 hover:text-cyan-300">
+          <i class="fa-solid fa-clock-rotate-left mr-1"></i> Command History
+        </button>
+        <button onclick="switchDashTab('tasks')" id="dashTabTasks" class="px-4 py-2 rounded-lg text-xs font-hud font-bold text-slate-400 hover:text-cyan-300">
+          <i class="fa-solid fa-list-check mr-1"></i> Tasks & Timers
+        </button>
+      </div>
+
+      <!-- Tab Content 1: Contacts Directory -->
+      <div id="dashContentContacts" class="flex-1 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-hud text-sm font-bold text-stark-brightCyan">SAVED STARK CONTACTS</h3>
+          <button onclick="openModal('addContactModal')" class="px-3 py-1.5 rounded-lg bg-stark-cyan/30 hover:bg-stark-cyan/50 text-stark-brightCyan border border-stark-cyan/50 text-xs font-hud transition-all">
+            + Add New Contact
+          </button>
+        </div>
+        
+        <div id="contactsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Command History -->
+      <div id="dashContentHistory" class="hidden flex-1 flex-col gap-3">
+        <h3 class="font-hud text-sm font-bold text-stark-brightCyan">RECENT LOGS & MESSAGES</h3>
+        <div id="historyLogList" class="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-1">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Tasks & Timers -->
+      <div id="dashContentTasks" class="hidden flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="hud-card p-4 rounded-xl flex flex-col gap-3">
+          <h4 class="font-hud text-xs font-bold text-stark-brightCyan">STARK TASK CHECKLIST</h4>
+          <div class="flex gap-2">
+            <input type="text" id="newTaskInput" placeholder="Add task..." class="flex-1 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white">
+            <button onclick="addNewTask()" class="px-3 py-1.5 bg-stark-cyan/40 hover:bg-stark-cyan/60 text-white font-hud text-xs rounded">Add</button>
+          </div>
+          <ul id="taskList" class="flex flex-col gap-2 max-h-60 overflow-y-auto font-sans text-xs">
+            <!-- Rendered dynamically -->
+          </ul>
+        </div>
+
+        <div class="hud-card p-4 rounded-xl flex flex-col gap-3">
+          <h4 class="font-hud text-xs font-bold text-stark-brightCyan">ACTIVE TIMERS</h4>
+          <div id="activeTimersContainer" class="flex flex-col gap-2 text-xs font-mono text-amber-400">
+            <p class="text-slate-500 font-sans italic">No active timers.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== FOOTER STATUS BAR ==================== -->
+  <footer class="w-full px-4 py-2 border-t border-stark-border bg-stark-bg/90 backdrop-blur-md text-[11px] font-mono text-cyan-400/70 flex flex-wrap items-center justify-between gap-2 z-30">
+    <div class="flex items-center gap-4">
+      <span>AI ENGINE: <strong id="activeModelLabel" class="text-stark-brightCyan font-hud">gemini-3.8-flash</strong></span>
+      <span>BRIDGE: <strong id="footerBridgeLabel" class="text-emerald-400 font-hud">ONLINE (127.0.0.1:8765)</strong></span>
+    </div>
+    <div>
+      <span>JARVIS OS HUB &copy; 2026 STARK INDUSTRIES</span>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. AUTO-SEND OS BRIDGE MODAL -->
+  <div id="bridgeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="hud-card max-w-xl w-full p-6 rounded-2xl border-stark-brightCyan/50 relative flex flex-col gap-4">
+      <button onclick="closeModal('bridgeModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      
+      <div class="flex items-center gap-3 border-b border-stark-border pb-3">
+        <i class="fa-solid fa-network-wired text-2xl text-emerald-400"></i>
+        <div>
+          <h3 class="font-hud text-base font-bold text-emerald-400">LOCAL AUTO-SEND OS BRIDGE</h3>
+          <p class="text-xs text-slate-400">Enables automatic headless Enter key pressing & zero popup blocking</p>
+        </div>
+      </div>
+
+      <!-- Live Connection Card -->
+      <div class="bg-black/50 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span id="modalBridgeDot" class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div>
+            <div id="modalBridgeStatus" class="font-hud text-sm font-bold text-emerald-400">Bridge Online (127.0.0.1:8765)</div>
+            <div class="text-[11px] text-slate-400 font-mono">Hands-free WhatsApp & Gmail dispatch enabled</div>
+          </div>
+        </div>
+        <button onclick="checkBridgeHealth()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-hud">
+          Re-Test
+        </button>
+      </div>
+
+      <!-- Configurable Delay Slider -->
+      <div class="flex flex-col gap-2">
+        <label class="text-xs font-hud text-slate-300 flex justify-between">
+          <span>WHATSAPP WEB LOAD DELAY BEFORE ENTER:</span>
+          <span id="delayValueLabel" class="text-emerald-400 font-mono font-bold">14 Seconds</span>
+        </label>
+        <input type="range" id="bridgeDelaySlider" min="8" max="25" value="14" oninput="updateBridgeDelay(this.value)" class="w-full accent-emerald-500 cursor-pointer">
+        <p class="text-[11px] text-slate-500">Allows WhatsApp Web enough time to load your chat before pyautogui automatically presses Enter.</p>
+      </div>
+
+      <!-- Quick Start Instructions & Script Download -->
+      <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+        <div class="font-hud font-bold text-stark-brightCyan">3-STEP SETUP GUIDE:</div>
+        <ol class="list-decimal list-inside text-slate-300 space-y-1 font-mono text-[11px]">
+          <li>Download & save <code class="text-emerald-400">jarvis_local.py</code> script to your computer.</li>
+          <li>Run: <code class="text-emerald-400">pip install pyautogui pyperclip</code></li>
+          <li>Execute: <code class="text-emerald-400">python jarvis_local.py</code></li>
+        </ol>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="downloadJarvisLocalScript()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-hud font-bold text-xs rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2">
+          <i class="fa-solid fa-download"></i> Download jarvis_local.py
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. AI BRAIN CONFIG MODAL -->
+  <div id="aiModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="hud-card max-w-xl w-full p-6 rounded-2xl border-stark-cyan/50 relative flex flex-col gap-4">
+      <button onclick="closeModal('aiModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+
+      <div class="flex items-center gap-3 border-b border-stark-border pb-3">
+        <i class="fa-solid fa-brain text-2xl text-stark-brightCyan"></i>
+        <div>
+          <h3 class="font-hud text-base font-bold text-stark-brightCyan">SELF-HEALING AI BRAIN</h3>
+          <p class="text-xs text-slate-400">Gemini 2.5 Multi-Host Routing & Model Failover Engine</p>
+        </div>
+      </div>
+
+      <!-- API Key Field -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-hud text-slate-300">GEMINI API KEY:</label>
+        <input type="password" id="geminiApiKeyInput" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-xl text-xs font-mono text-stark-brightCyan focus:outline-none focus:border-stark-cyan">
+      </div>
+
+      <!-- Model Selector -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-hud text-slate-300">PRIMARY AI MODEL:</label>
+        <select id="geminiModelSelect" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-xl text-xs font-sans text-slate-200 focus:outline-none focus:border-stark-cyan">
+          <option value="gemini-3.8-flash">gemini-3.8-flash (Latest Recommended)</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash (Fast)</option>
+          <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (Lightweight)</option>
+          <option value="gemini-3-flash-preview">gemini-3-flash-preview (Preview)</option>
+        </select>
+      </div>
+
+      <!-- Google Search Grounding Checkbox -->
+      <label class="flex items-center gap-2 cursor-pointer text-xs font-hud text-slate-300">
+        <input type="checkbox" id="searchGroundingToggle" checked class="w-4 h-4 accent-stark-cyan rounded">
+        <span>Enable Google Search Live Web Grounding</span>
+      </label>
+
+      <!-- Inline AI Connection Test Status -->
+      <div id="aiTestStatus" class="hidden text-xs font-mono p-2.5 rounded-xl border leading-relaxed"></div>
+
+      <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+        <button onclick="testAiConnection()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-hud">
+          Auto-Detect & Test AI
+        </button>
+        <button onclick="saveAiConfig()" class="px-4 py-2 bg-stark-cyan/40 hover:bg-stark-cyan/60 text-white font-hud font-bold text-xs rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. VOICE ENGINE SETTINGS MODAL -->
+  <div id="voiceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="hud-card max-w-xl w-full p-6 rounded-2xl border-stark-cyan/50 relative flex flex-col gap-4">
+      <button onclick="closeModal('voiceModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+
+      <div class="flex items-center gap-3 border-b border-stark-border pb-3">
+        <i class="fa-solid fa-sliders text-2xl text-stark-brightCyan"></i>
+        <div>
+          <h3 class="font-hud text-base font-bold text-stark-brightCyan">VOICE SYNTHESIS SETTINGS</h3>
+          <p class="text-xs text-slate-400">Configure Fish Audio API or Browser Native Speech Engine</p>
+        </div>
+      </div>
+
+      <!-- Voice Source Radio -->
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 text-xs font-hud text-slate-200 cursor-pointer">
+          <input type="radio" name="voiceEngine" value="browser" checked onchange="toggleVoiceEngineUI()" class="accent-stark-cyan">
+          Browser SpeechSynthesis (Native)
+        </label>
+        <label class="flex items-center gap-2 text-xs font-hud text-slate-200 cursor-pointer">
+          <input type="radio" name="voiceEngine" value="fish" onchange="toggleVoiceEngineUI()" class="accent-stark-cyan">
+          Fish Audio API (Realistic AI Voice)
+        </label>
+      </div>
+
+      <!-- Browser Voice Settings -->
+      <div id="browserVoiceControls" class="space-y-3 bg-black/40 p-3 rounded-xl border border-slate-800">
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-hud text-slate-400">SELECT BROWSER VOICE:</label>
+          <select id="browserVoiceSelect" class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded text-xs text-slate-200 focus:outline-none"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-hud text-slate-400">PITCH: <span id="pitchVal">1.0</span></label>
+            <input type="range" id="voicePitch" min="0.5" max="1.5" step="0.1" value="1.0" oninput="document.getElementById('pitchVal').innerText=this.value" class="w-full accent-stark-cyan">
+          </div>
+          <div>
+            <label class="text-[11px] font-hud text-slate-400">SPEED RATE: <span id="rateVal">1.0</span></label>
+            <input type="range" id="voiceRate" min="0.7" max="1.5" step="0.1" value="1.0" oninput="document.getElementById('rateVal').innerText=this.value" class="w-full accent-stark-cyan">
+          </div>
+        </div>
+      </div>
+
+      <!-- Fish Audio Settings -->
+      <div id="fishVoiceControls" class="hidden space-y-3 bg-black/40 p-3 rounded-xl border border-slate-800">
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-hud text-slate-400">FISH AUDIO API KEY:</label>
+          <input type="password" id="fishApiKeyInput" placeholder="Enter Fish Audio API key..." class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded text-xs text-stark-brightCyan">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-[11px] font-hud text-slate-400">MODEL ID / REFERENCE ID:</label>
+          <input type="text" id="fishRefIdInput" placeholder="e.g. s2.1-pro-free or reference voice ID" class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded text-xs text-slate-200">
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center pt-2">
+        <button onclick="speakTestPhrase()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-hud rounded">
+          <i class="fa-solid fa-volume-high mr-1"></i> Test Voice
+        </button>
+        <button onclick="saveVoiceConfig()" class="px-4 py-2 bg-stark-cyan/40 hover:bg-stark-cyan/60 text-white font-hud font-bold text-xs rounded-xl">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. CONTACTS DIRECTORY MODAL -->
+  <div id="contactsModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="hud-card max-w-2xl w-full p-6 rounded-2xl border-stark-cyan/50 relative flex flex-col gap-4 max-h-[85vh]">
+      <button onclick="closeModal('contactsModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+
+      <div class="flex items-center justify-between border-b border-stark-border pb-3">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-address-book text-2xl text-stark-brightCyan"></i>
+          <div>
+            <h3 class="font-hud text-base font-bold text-stark-brightCyan">STARK CONTACTS DIRECTORY</h3>
+            <p class="text-xs text-slate-400">Fuzzy resolver links spoken names/aliases to phone/email</p>
+          </div>
+        </div>
+        <button onclick="openModal('addContactModal')" class="px-3 py-1.5 bg-stark-cyan/30 hover:bg-stark-cyan/50 text-stark-brightCyan border border-stark-cyan/50 rounded-lg text-xs font-hud">
+          + Add Contact
+        </button>
+      </div>
+
+      <div id="modalContactsList" class="flex flex-col gap-2 overflow-y-auto max-h-[50vh] pr-1">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. ADD / EDIT CONTACT MODAL -->
+  <div id="addContactModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="hud-card max-w-md w-full p-6 rounded-2xl border-stark-brightCyan/60 relative flex flex-col gap-4">
+      <button onclick="closeModal('addContactModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      
+      <h3 id="addContactTitle" class="font-hud text-base font-bold text-stark-brightCyan border-b border-stark-border pb-2">ADD STARK CONTACT</h3>
+
+      <form onsubmit="saveContactForm(event)" class="space-y-3">
+        <input type="hidden" id="contactEditId" value="">
+        
+        <div>
+          <label class="text-[11px] font-hud text-slate-400">NAME / ALIAS:</label>
+          <input type="text" id="contactNameInput" required placeholder="e.g. Papa, Mom, Alex" class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-stark-cyan">
+        </div>
+
+        <div>
+          <label class="text-[11px] font-hud text-slate-400">WHATSAPP PHONE NUMBER:</label>
+          <input type="text" id="contactPhoneInput" placeholder="e.g. 9876543210 or +919876543210" class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-stark-cyan">
+          <p class="text-[10px] text-slate-500 mt-0.5">10-digit Indian numbers auto-prefix +91.</p>
+        </div>
+
+        <div>
+          <label class="text-[11px] font-hud text-slate-400">EMAIL ADDRESS:</label>
+          <input type="email" id="contactEmailInput" placeholder="e.g. papa@gmail.com" class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-stark-cyan">
+        </div>
+
+        <div>
+          <label class="text-[11px] font-hud text-slate-400">ALIASES / KEYWORDS (COMMA SEPARATED):</label>
+          <input type="text" id="contactAliasesInput" placeholder="e.g. dad, father, pop" class="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-stark-cyan">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('addContactModal')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-hud">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-stark-cyan/40 hover:bg-stark-cyan/60 text-white font-hud font-bold text-xs rounded-lg">Save Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ==================== JAVASCRIPT APPLICATION CORE ==================== -->
+  <script>
+    /* ====================================================================
+       1. GLOBAL STATE & CONFIGURATION
+       ==================================================================== */
+    const DEFAULT_GEMINI_KEY = "";
+    const DEPRECATED_GEMINI_MODELS = new Set([
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro',
+      'gemini-2.5-pro'
+    ]);
+
+    const savedGeminiModel = (localStorage.getItem('jarvis_gemini_model') || '').replace(/^models\//, '').trim();
+    const initialGeminiModel = (savedGeminiModel && !DEPRECATED_GEMINI_MODELS.has(savedGeminiModel))
+      ? savedGeminiModel
+      : 'gemini-3.8-flash';
+
+    let state = {
+      geminiApiKey: localStorage.getItem('jarvis_gemini_key') || DEFAULT_GEMINI_KEY,
+      geminiModel: initialGeminiModel,
+      discoveredModels: [],
+      useSearchGrounding: localStorage.getItem('jarvis_search_grounding') !== 'false',
+      
+      voiceEngine: localStorage.getItem('jarvis_voice_engine') || 'browser', // 'browser' or 'fish'
+      fishApiKey: localStorage.getItem('jarvis_fish_key') || '',
+      fishRefId: localStorage.getItem('jarvis_fish_ref_id') || 's2.1-pro-free',
+      voicePitch: parseFloat(localStorage.getItem('jarvis_voice_pitch') || '1.0'),
+      voiceRate: parseFloat(localStorage.getItem('jarvis_voice_rate') || '1.0'),
+      selectedBrowserVoiceURI: localStorage.getItem('jarvis_browser_voice') || '',
+
+      bridgeOnline: false,
+      bridgeDelay: parseInt(localStorage.getItem('jarvis_bridge_delay') || '14'),
+      liveChatMode: false,
+
+      orbState: 'idle', // 'idle' | 'listening' | 'thinking' | 'speaking'
+      lastDraft: null, // holds { type: 'whatsapp'|'email', recipient, contact, message, subject, phone, email }
+      
+      contacts: JSON.parse(localStorage.getItem('jarvis_contacts')) || [
+        { id: '1', name: 'Papa', phone: '9876543210', email: 'papa@stark.com', aliases: ['dad', 'father', 'pops'] },
+        { id: '2', name: 'Mom', phone: '9876543211', email: 'mom@stark.com', aliases: ['mother', 'mum'] },
+        { id: '3', name: 'Alex', phone: '9876543212', email: 'alex@stark.com', aliases: ['alexander', 'bro'] },
+        { id: '4', name: 'Priya', phone: '9876543213', email: 'priya@stark.com', aliases: ['priya sharma', 'bestie'] }
+      ],
+
+      historyLogs: JSON.parse(localStorage.getItem('jarvis_history')) || [],
+      tasks: JSON.parse(localStorage.getItem('jarvis_tasks')) || [
+        { id: 't1', text: 'Review Stark Security Protocols', done: false },
+        { id: 't2', text: 'Calibrate Local OS Bridge', done: true }
+      ]
+    };
+
+    /* ====================================================================
+       2. INITIALIZATION & LIFECYCLE
+       ==================================================================== */
+    window.onload = function() {
+      // Sync local state inputs
+      document.getElementById('geminiApiKeyInput').value = state.geminiApiKey;
+      syncActiveModelUI(state.geminiModel);
+      document.getElementById('searchGroundingToggle').checked = state.useSearchGrounding;
+      document.getElementById('bridgeDelaySlider').value = state.bridgeDelay;
+      document.getElementById('delayValueLabel').innerText = state.bridgeDelay + ' Seconds';
+
+      // Setup Canvas & Speech Engines
+      initCanvasOrb();
+      populateBrowserVoices();
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = populateBrowserVoices;
+      }
+      initSpeechRecognition();
+
+      // Render Initial UI Views
+      renderContactsList();
+      renderHistoryList();
+      renderTaskList();
+
+      // Initial Bridge Health Check & Interval
+      checkBridgeHealth();
+      setInterval(checkBridgeHealth, 8000);
+
+      // Welcome voice initialization
+      setTimeout(() => {
+        speakResponse("J.A.R.V.I.S. online and systems fully operational, sir.");
+      }, 1000);
+    };
+
+    /* ====================================================================
+       3. SYNCHRONOUS APP LAUNCH & WHATSAPP INTERCEPTION (Fixes Popup Block)
+       ==================================================================== */
+    function handleCommandSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('commandInput');
+      const rawText = input.value.trim();
+      if (!rawText) return;
+
+      input.value = '';
+
+      // INSTANT SYNCHRONOUS APP CHECK BEFORE ANY AWAIT CALLS
+      const lower = rawText.toLowerCase();
+      
+      if (lower.startsWith('open whatsapp') || lower === 'launch whatsapp') {
+        const url = 'https://web.whatsapp.com';
+        window.open(url, '_blank', 'noopener');
+        if (state.bridgeOnline) {
+          fetch('http://127.0.0.1:8765/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, app: 'whatsapp' })
+          }).catch(() => {});
+        }
+        const reply = 'Opening WhatsApp Web right away, sir.';
+        displayResponseCard(reply);
+        speakResponse(reply);
+        logHistory(rawText, reply);
+        return;
+      }
+
+      // Additional synchronous direct app launches to bypass popup blockers
+      const directApps = [
+        { keys: ['open gmail', 'launch gmail', 'open mail'], name: 'Gmail', url: 'https://mail.google.com' },
+        { keys: ['open youtube music', 'launch youtube music', 'open yt music'], name: 'YouTube Music', url: 'https://music.youtube.com' },
+        { keys: ['open youtube', 'launch youtube'], name: 'YouTube', url: 'https://www.youtube.com' },
+        { keys: ['open spotify', 'launch spotify'], name: 'Spotify', url: 'https://open.spotify.com' },
+        { keys: ['open google maps', 'open maps'], name: 'Google Maps', url: 'https://maps.google.com' },
+        { keys: ['open calendar', 'open google calendar'], name: 'Google Calendar', url: 'https://calendar.google.com' },
+        { keys: ['open github', 'launch github'], name: 'GitHub', url: 'https://github.com' },
+        { keys: ['open google'], name: 'Google', url: 'https://www.google.com' }
+      ];
+
+      for (const app of directApps) {
+        if (app.keys.some(k => lower === k || lower.startsWith(k + ' '))) {
+          window.open(app.url, '_blank', 'noopener');
+          if (state.bridgeOnline) {
+            fetch('http://127.0.0.1:8765/open', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: app.url, app: app.name.toLowerCase() })
+            }).catch(() => {});
+          }
+          const reply = `Opening ${app.name}, sir.`;
+          displayResponseCard(reply);
+          speakResponse(reply);
+          logHistory(rawText, reply);
+          return;
+        }
+      }
+
+      // Check if user is modifying or dispatching the active message draft
+      if (state.lastDraft && isDraftEditCommand(rawText)) {
+        handleDraftEditCommand(rawText);
+        return;
+      }
+
+      // Otherwise route through Gemini AI Brain
+      processCommandWithAI(rawText);
+    }
+
+    /* ====================================================================
+       4. AI BRAIN COMMAND PROCESSOR & SELF-HEALING GEMINI ROUTER
+       ==================================================================== */
+    async function processCommandWithAI(rawQuery) {
+      setOrbState('thinking');
+      displayResponseCard('Analyzing command with J.A.R.V.I.S. AI Brain...');
+
+      const lower = rawQuery.toLowerCase();
+      const isCommsIntent = /\b(whatsapp|message|text|email|mail|gmail|send|tell|write to|compose)\b/i.test(lower);
+      const needsWebSearch = !isCommsIntent && /\b(news|weather|today|latest|current|price|score|happening|who is|what is|search|play|watch|video|song)\b/i.test(lower);
+
+      const contactsContext = state.contacts
+        .map(c => `${c.name} (phone: ${c.phone || 'none'}, email: ${c.email || 'none'}, aliases: ${(c.aliases || []).join('/')})`)
+        .join('; ');
+
+      const promptText = `You are J.A.R.V.I.S., Tony Stark's intelligent personal assistant.
+Saved contacts: ${contactsContext}
+
+Analyze the user's command: "${rawQuery}"
+
+Return ONLY a valid JSON object (no markdown fences, no commentary) using one of these schemas:
+1. WhatsApp message:
+{"action":"whatsapp","recipient":"Contact Name or Phone","message":"ONLY the clean, natural final message body to send — NEVER repeat the user's command instructions","spoken_reply":"Short confirmation in J.A.R.V.I.S. style"}
+2. Email:
+{"action":"email","recipient":"Contact Name or Email","subject":"Clear subject line","message":"ONLY the complete, well-written email body in the requested tone and length","spoken_reply":"Short confirmation in J.A.R.V.I.S. style"}
+3. Play video/music:
+{"action":"play_media","query":"Exact search query for YouTube","spoken_reply":"Short confirmation"}
+4. Add task:
+{"action":"add_task","task":"Task description","spoken_reply":"Short confirmation"}
+5. General answer / chat:
+{"action":"chat","message":"Helpful, accurate, concise response","spoken_reply":"Natural spoken version of the response"}`;
+
+      try {
+        const result = await callGeminiApi(promptText, { allowSearch: needsWebSearch });
+        let parsed = parseAiJsonResponse(result.text);
+
+        if (!parsed || !parsed.action) {
+          parsed = fallbackCommandParser(rawQuery, result.text);
+        }
+
+        executeAiAction(parsed, rawQuery, result.groundingSources || []);
+      } catch (err) {
+        console.error('AI Command Error:', err);
+        const fallbackAction = fallbackCommandParser(
+          rawQuery,
+          `I encountered an AI connection issue (${err.message}), sir. Open the Brain settings icon to verify your key or model.`
+        );
+        executeAiAction(fallbackAction, rawQuery, []);
+      } finally {
+        if (state.orbState === 'thinking') {
+          setOrbState('idle');
+        }
+      }
+    }
+
+    // Keep model dropdown, footer label, and localStorage synchronized
+    function syncActiveModelUI(modelId) {
+      if (!modelId) return;
+      const cleanId = modelId.replace(/^models\//, '').trim();
+      state.geminiModel = cleanId;
+      localStorage.setItem('jarvis_gemini_model', cleanId);
+
+      const lbl = document.getElementById('activeModelLabel');
+      if (lbl) lbl.innerText = cleanId;
+
+      const select = document.getElementById('geminiModelSelect');
+      if (select) {
+        const exists = Array.from(select.options).some(opt => opt.value === cleanId);
+        if (!exists) {
+          const opt = document.createElement('option');
+          opt.value = cleanId;
+          opt.innerText = `${cleanId} (Auto-Detected)`;
+          select.insertBefore(opt, select.firstChild);
+        }
+        select.value = cleanId;
+      }
+    }
+
+    // Query ListModels to discover active generateContent-capable Gemini models for the current key
+    async function discoverAvailableModels(apiKey) {
+      const cleanKey = (apiKey || '').replace(/\s+/g, '');
+      if (!cleanKey) return [];
+
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 6000);
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`,
+          { signal: controller.signal }
+        );
+        clearTimeout(tid);
+        if (!res.ok) return [];
+
+        const data = await res.json();
+        const models = (Array.isArray(data.models) ? data.models : [])
+          .filter(m =>
+            Array.isArray(m.supportedGenerationMethods) &&
+            m.supportedGenerationMethods.includes('generateContent')
+          )
+          .map(m => String(m.name || '').replace(/^models\//, '').trim())
+          .filter(id =>
+            id &&
+            /^gemini/i.test(id) &&
+            !DEPRECATED_GEMINI_MODELS.has(id) &&
+            !/(embedding|imagen|veo|tts|audio|live|aqa)/i.test(id)
+          );
+
+        // Prioritize latest Flash models first (e.g. gemini-3.8-flash, gemini-3*, gemini-2.5-flash)
+        models.sort((a, b) => {
+          const score = id => {
+            if (id === 'gemini-3.8-flash') return 120;
+            if (/gemini-3.*flash/i.test(id)) return 100;
+            if (/gemini-2\.5-flash-lite/i.test(id)) return 85;
+            if (/gemini-2\.5-flash/i.test(id)) return 90;
+            if (/flash/i.test(id)) return 75;
+            if (/gemini-3/i.test(id)) return 60;
+            return 40;
+          };
+          const diff = score(b) - score(a);
+          return diff !== 0 ? diff : b.localeCompare(a);
+        });
+
+        state.discoveredModels = models;
+
+        const select = document.getElementById('geminiModelSelect');
+        if (select && models.length > 0) {
+          models.forEach(id => {
+            if (!Array.from(select.options).some(opt => opt.value === id)) {
+              const opt = document.createElement('option');
+              opt.value = id;
+              opt.innerText = `${id} (Available)`;
+              select.appendChild(opt);
+            }
+          });
+        }
+        return models;
+      } catch (_) {
+        clearTimeout(tid);
+        return [];
+      }
+    }
+
+    // Self-healing dual-host routing, live model discovery & replacement auto-healing for Gemini API
+    async function callGeminiApi(promptText, options = {}) {
+      const apiKey = (state.geminiApiKey || DEFAULT_GEMINI_KEY).replace(/\s+/g, '');
+      const isVertexKey = apiKey.startsWith("AQ.");
+      const allowSearch = Boolean(state.useSearchGrounding && options.allowSearch);
+
+      // Valid Vertex AI Express endpoint + Gemini Developer API fallback
+      const hosts = isVertexKey
+        ? [
+            "https://aiplatform.googleapis.com/v1/publishers/google/models/",
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+          ]
+        : [
+            "https://generativelanguage.googleapis.com/v1beta/models/",
+            "https://aiplatform.googleapis.com/v1/publishers/google/models/"
+          ];
+
+      // Build ordered unique model failover queue (excluding deprecated models like gemini-2.0-flash)
+      const primaryModel = (state.geminiModel || "gemini-3.8-flash").replace(/^models\//, '').trim();
+      const baseModels = [
+        ...(DEPRECATED_GEMINI_MODELS.has(primaryModel) ? [] : [primaryModel]),
+        ...(Array.isArray(state.discoveredModels) ? state.discoveredModels : []),
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-3-flash-preview"
+      ].filter((m, idx, arr) => m && !DEPRECATED_GEMINI_MODELS.has(m) && arr.indexOf(m) === idx);
+
+      // Helper to execute a single request attempt with timeout and clear error extraction
+      async function attemptRequest(baseUrl, model, includeTools, includeThinkingConfig) {
+        const endpoint = `${baseUrl}${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+        const generationConfig = { temperature: 0.2 };
+        // thinkingBudget must be nested inside thinkingConfig and is only supported on 2.5 Flash models
+        if (includeThinkingConfig && /^gemini-2\.5-flash/i.test(model)) {
+          generationConfig.thinkingConfig = { thinkingBudget: 0 };
+        }
+
+        const contentParts = [{ text: promptText }];
+        if (options.inlineAudio && options.inlineAudio.data) {
+          contentParts.push({
+            inlineData: {
+              mimeType: options.inlineAudio.mimeType || 'audio/webm',
+              data: options.inlineAudio.data
+            }
+          });
+        }
+
+        const requestBody = {
+          // role: "user" is required on Vertex AI endpoints to avoid HTTP 400
+          contents: [{ role: "user", parts: contentParts }],
+          generationConfig
+        };
+
+        if (includeTools) {
+          requestBody.tools = [{ googleSearch: {} }];
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (!res.ok) {
+            let errDetail = `HTTP ${res.status}`;
+            try {
+              const errJson = await res.json();
+              if (errJson?.error?.message) errDetail = `${res.status}: ${errJson.error.message}`;
+            } catch (_) {}
+            const err = new Error(`Gemini API Error (${model}): ${errDetail}`);
+            err.status = res.status;
+            throw err;
+          }
+
+          const data = await res.json();
+          const candidate = data.candidates?.[0];
+          const parts = candidate?.content?.parts || [];
+          const text = parts
+            .filter(p => !p.thought && typeof p.text === 'string')
+            .map(p => p.text)
+            .join('\n')
+            .trim();
+
+          // Extract Grounding Sources if present
+          const sources = [];
+          const metadata = candidate?.groundingMetadata;
+          if (metadata && metadata.groundingChunks) {
+            metadata.groundingChunks.forEach(chunk => {
+              if (chunk.web?.uri && chunk.web?.title) {
+                sources.push({ title: chunk.web.title, uri: chunk.web.uri });
+              }
+            });
+          }
+
+          return { text, groundingSources: sources, model };
+        } catch (err) {
+          clearTimeout(timeoutId);
+          throw err;
+        }
+      }
+
+      let lastError = null;
+      let didLiveDiscovery = state.discoveredModels.length > 0;
+
+      for (const baseUrl of hosts) {
+        const queue = [...baseModels];
+        const attempted = new Set();
+
+        for (let i = 0; i < queue.length; i++) {
+          const model = queue[i];
+          if (!model || attempted.has(model)) continue;
+          attempted.add(model);
+
+          try {
+            const result = await attemptRequest(baseUrl, model, allowSearch, true);
+            syncActiveModelUI(result.model);
+            return result;
+          } catch (err) {
+            lastError = err;
+
+            // If 400 Invalid Argument (e.g. tools or thinkingConfig rejected), retry clean minimal payload on same model
+            if (err.status === 400) {
+              try {
+                const cleanResult = await attemptRequest(baseUrl, model, false, false);
+                syncActiveModelUI(cleanResult.model);
+                return cleanResult;
+              } catch (cleanErr) {
+                lastError = cleanErr;
+              }
+            }
+
+            // If 404 mentions a replacement model (e.g. "use models/gemini-3.8-flash"), immediately queue it next
+            if (err.status === 404 && typeof err.message === 'string') {
+              const suggested = err.message.match(/use\s+models\/([a-zA-Z0-9._-]+)/i);
+              if (suggested && suggested[1] && !attempted.has(suggested[1])) {
+                queue.splice(i + 1, 0, suggested[1]);
+              }
+              if (!didLiveDiscovery) {
+                didLiveDiscovery = true;
+                const discovered = await discoverAvailableModels(apiKey);
+                discovered.forEach(dm => {
+                  if (!attempted.has(dm) && !queue.includes(dm)) queue.push(dm);
+                });
+              }
+            }
+          }
+        }
+      }
+
+      throw lastError || new Error("Gemini API Error: All endpoints and models failed.");
+    }
+
+    // Robust JSON Parser with regex balance extraction
+    function parseAiJsonResponse(rawText) {
+      if (!rawText) return null;
+      try {
+        // Strip markdown code fences if present
+        let clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const firstBrace = clean.indexOf('{');
+        const lastBrace = clean.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+          clean = clean.substring(firstBrace, lastBrace + 1);
+          return JSON.parse(clean);
+        }
+      } catch (e) {
+        console.warn("JSON Parse warning, using regex extract", e);
+      }
+      return null;
+    }
+
+    // Fallback Offline Parser
+    function fallbackCommandParser(rawQuery, aiReplyText) {
+      const lower = rawQuery.toLowerCase();
+
+      if (lower.includes('whatsapp') || lower.includes('message')) {
+        let recipient = 'Unknown';
+        let message = rawQuery;
+
+        // Try extracting recipient after "to"
+        const toMatch = rawQuery.match(/message\s+(?:to\s+)?([a-zA-Z0-9]+)\s+(?:saying|that|about)?\s*(.*)/i) ||
+                        rawQuery.match(/whatsapp\s+(?:to\s+)?([a-zA-Z0-9]+)\s+(?:saying|that|about)?\s*(.*)/i);
+        if (toMatch) {
+          recipient = toMatch[1];
+          message = toMatch[2] || "Hello, sent via JARVIS.";
+        }
+
+        return {
+          action: 'whatsapp',
+          spoken_reply: `Preparing WhatsApp message for ${recipient}, sir.`,
+          recipient: recipient,
+          message: cleanRawPromptMessage(message)
+        };
+      }
+
+      if (lower.includes('email') || lower.includes('mail')) {
+        let recipient = 'Unknown';
+        let message = rawQuery;
+        const emailMatch = rawQuery.match(/email\s+(?:to\s+)?([a-zA-Z0-9]+)\s+(?:saying|that|about)?\s*(.*)/i);
+        if (emailMatch) {
+          recipient = emailMatch[1];
+          message = emailMatch[2] || "Sent via JARVIS.";
+        }
+        return {
+          action: 'email',
+          spoken_reply: `Composing email to ${recipient}, sir.`,
+          recipient: recipient,
+          subject: 'JARVIS Communication',
+          message: cleanRawPromptMessage(message)
+        };
+      }
+
+      return {
+        action: 'chat',
+        spoken_reply: aiReplyText || "Command received and processed, sir."
+      };
+    }
+
+    function cleanRawPromptMessage(msg) {
+      return msg.replace(/^send\s+(a\s+)?(whatsapp\s+)?message\s+to\s+\w+\s+(saying|that|about)?\s*/i, '')
+                .replace(/^tell\s+\w+\s+(that|about)?\s*/i, '')
+                .trim();
+    }
+
+    /* ====================================================================
+       5. ACTION EXECUTION & DISPATCH STATION
+       ==================================================================== */
+    function executeAiAction(actionObj, originalQuery, groundingSources) {
+      const action = actionObj.action || 'chat';
+      const spokenReply = actionObj.spoken_reply || "Task complete, sir.";
+
+      speakResponse(spokenReply);
+
+      if (action === 'whatsapp') {
+        const contact = resolveContact(actionObj.recipient);
+        const cleanPhone = sanitizePhoneDigits(contact ? contact.phone : actionObj.recipient);
+        
+        state.lastDraft = {
+          type: 'whatsapp',
+          recipient: contact ? contact.name : actionObj.recipient,
+          contact: contact,
+          phone: cleanPhone,
+          message: actionObj.message || "Hello, sent via J.A.R.V.I.S.",
+          originalQuery: originalQuery
+        };
+
+        renderDispatchCard();
+        displayResponseCard(spokenReply, "dispatch", groundingSources);
+
+        // Auto-Send execution if Bridge is Online
+        if (state.bridgeOnline && cleanPhone) {
+          triggerBridgeWhatsappAutoSend(cleanPhone, state.lastDraft.recipient, state.lastDraft.message);
+        } else {
+          // Open WhatsApp Web immediately in browser
+          const waUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(state.lastDraft.message)}`;
+          window.open(waUrl, '_blank', 'noopener');
+        }
+
+      } else if (action === 'email') {
+        const contact = resolveContact(actionObj.recipient);
+        const email = contact ? contact.email : (actionObj.recipient.includes('@') ? actionObj.recipient : '');
+
+        state.lastDraft = {
+          type: 'email',
+          recipient: contact ? contact.name : actionObj.recipient,
+          contact: contact,
+          email: email,
+          subject: actionObj.subject || 'JARVIS Notification',
+          message: actionObj.message || "Sent via J.A.R.V.I.S.",
+          originalQuery: originalQuery
+        };
+
+        renderDispatchCard();
+        displayResponseCard(spokenReply, "dispatch", groundingSources);
+
+        if (state.bridgeOnline && email) {
+          triggerBridgeEmailAutoSend(email, state.lastDraft.subject, state.lastDraft.message);
+        } else {
+          const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(state.lastDraft.subject)}&body=${encodeURIComponent(state.lastDraft.message)}`;
+          window.open(gmailUrl, '_blank', 'noopener');
+        }
+
+      } else if (action === 'play_media') {
+        displayResponseCard(spokenReply, "media", groundingSources);
+        if (actionObj.query) {
+          const embedUrl = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(actionObj.query)}&autoplay=1`;
+          document.getElementById('youtubeIframe').src = embedUrl;
+          document.getElementById('mediaPlayerCard').classList.remove('hidden');
+          document.getElementById('mediaPlayerCard').classList.add('flex');
+        }
+      } else if (action === 'add_task') {
+        if (actionObj.task) {
+          state.tasks.push({ id: 't_' + Date.now(), text: actionObj.task, done: false });
+          saveTasks();
+          renderTaskList();
+        }
+        displayResponseCard(spokenReply, "text", groundingSources);
+      } else {
+        displayResponseCard(actionObj.message || spokenReply, "text", groundingSources);
+      }
+
+      logHistory(originalQuery, spokenReply);
+    }
+
+    // Phone digit sanitizer with +91 Indian country code auto-prefix for 10-digit numbers
+    function sanitizePhoneDigits(phoneStr) {
+      if (!phoneStr) return '';
+      let clean = phoneStr.replace(/\D/g, '');
+      if (clean.length === 10) {
+        clean = '91' + clean;
+      }
+      return clean;
+    }
+
+    // Contact Resolver (Fuzzy name & alias match)
+    function resolveContact(queryName) {
+      if (!queryName) return null;
+      const q = queryName.toLowerCase().trim();
+      return state.contacts.find(c => 
+        c.name.toLowerCase() === q || 
+        c.name.toLowerCase().includes(q) ||
+        (c.aliases && c.aliases.some(a => a.toLowerCase() === q || a.toLowerCase().includes(q)))
+      );
+    }
+
+    /* ====================================================================
+       6. DISPATCH CARD & DRAFT EDITING
+       ==================================================================== */
+    function renderDispatchCard() {
+      const d = state.lastDraft;
+      if (!d) return;
+
+      const card = document.getElementById('dispatchCard');
+      const title = document.getElementById('dispatchTitle');
+      const pill = document.getElementById('dispatchStatusPill');
+      const recipientName = document.getElementById('dispatchRecipientName');
+      const contactDetail = document.getElementById('dispatchContactDetail');
+      const missingBox = document.getElementById('missingContactBox');
+      const msgArea = document.getElementById('dispatchMessageArea');
+      const primaryBtn = document.getElementById('dispatchPrimaryBtn');
+
+      card.classList.remove('hidden');
+      card.classList.add('flex');
+
+      if (d.type === 'whatsapp') {
+        title.innerHTML = `<i class="fa-brands fa-whatsapp text-lg"></i> WHATSAPP DISPATCH CONTROL`;
+        recipientName.innerText = d.recipient;
+        
+        if (d.phone) {
+          contactDetail.innerText = `(+${d.phone})`;
+          missingBox.classList.add('hidden');
+        } else {
+          contactDetail.innerText = `(No Phone Number)`;
+          missingBox.classList.remove('hidden');
+          missingBox.classList.add('flex');
+        }
+
+        if (state.bridgeOnline) {
+          pill.className = "text-[10px] font-hud px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+          pill.innerText = "AUTO-SENT VIA OS BRIDGE";
+          primaryBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Re-Dispatch via OS Bridge`;
+        } else {
+          pill.className = "text-[10px] font-hud px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40";
+          pill.innerText = "OPENED WHATSAPP WEB — PRESS ENTER";
+          primaryBtn.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Open WhatsApp Web Now`;
+        }
+
+      } else {
+        title.innerHTML = `<i class="fa-solid fa-envelope text-lg"></i> GMAIL DISPATCH CONTROL`;
+        recipientName.innerText = d.recipient;
+        contactDetail.innerText = d.email ? `(${d.email})` : `(No Email Saved)`;
+        if (!d.email) {
+          missingBox.classList.remove('hidden');
+          missingBox.classList.add('flex');
+        } else {
+          missingBox.classList.add('hidden');
+        }
+
+        if (state.bridgeOnline) {
+          pill.innerText = "AUTO-SENT VIA OS GMAIL BRIDGE";
+          primaryBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Re-Send Email`;
+        } else {
+          pill.innerText = "OPENED GMAIL COMPOSE";
+          primaryBtn.innerHTML = `<i class="fa-solid fa-envelope"></i> Open Gmail Compose`;
+        }
+      }
+
+      msgArea.value = d.message;
+      msgArea.oninput = function() {
+        state.lastDraft.message = this.value;
+      };
+    }
+
+    function isDraftEditCommand(query) {
+      const lower = query.toLowerCase();
+      return lower.includes('stricter') || lower.includes('polite') || 
+             lower.includes('shorter') || lower.includes('hindi') || 
+             lower.includes('enlarge') || lower.includes('send now') ||
+             lower.startsWith('make it') || lower.startsWith('change tone');
+    }
+
+    async function handleDraftEditCommand(query) {
+      const lower = query.toLowerCase();
+      if (lower.includes('stricter')) adjustDraft('stricter');
+      else if (lower.includes('polite')) adjustDraft('polite');
+      else if (lower.includes('shorter')) adjustDraft('shorter');
+      else if (lower.includes('hindi')) adjustDraft('hindi');
+      else if (lower.includes('send now')) executeDispatchNow();
+      else {
+        // AI rewrite based on instruction
+        try {
+          const rewritePrompt = `Rewrite this message based on user instruction "${query}":\n"${state.lastDraft.message}"\nReturn ONLY the rewritten message body text.`;
+          const res = await callGeminiApi(rewritePrompt, { allowSearch: false });
+          if (res.text) {
+            state.lastDraft.message = res.text.trim();
+            renderDispatchCard();
+            speakResponse("Message updated, sir.");
+          }
+        } catch (err) {
+          console.error("Draft Rewrite Error:", err);
+          setOrbState('idle');
+          speakResponse("Unable to rewrite the draft right now, sir.");
+        }
+      }
+    }
+
+    function adjustDraft(tone) {
+      if (!state.lastDraft) return;
+      let msg = state.lastDraft.message;
+
+      if (tone === 'stricter') {
+        msg = "Please note: " + msg.replace(/please /gi, '') + " This requires immediate attention.";
+      } else if (tone === 'polite') {
+        msg = "Hope you are doing well. " + msg + " Thank you so much!";
+      } else if (tone === 'shorter') {
+        msg = msg.split('.')[0] + '.';
+      } else if (tone === 'hindi') {
+        msg = "kripya dhyan dein: " + msg;
+      }
+
+      state.lastDraft.message = msg;
+      renderDispatchCard();
+      speakResponse("Draft tone updated, sir.");
+    }
+
+    function executeDispatchNow() {
+      if (!state.lastDraft) return;
+      const d = state.lastDraft;
+
+      if (d.type === 'whatsapp') {
+        if (state.bridgeOnline && d.phone) {
+          triggerBridgeWhatsappAutoSend(d.phone, d.recipient, d.message);
+        } else {
+          const waUrl = `https://web.whatsapp.com/send?phone=${d.phone}&text=${encodeURIComponent(d.message)}`;
+          window.open(waUrl, '_blank', 'noopener');
+        }
+      } else {
+        if (state.bridgeOnline && d.email) {
+          triggerBridgeEmailAutoSend(d.email, d.subject, d.message);
+        } else {
+          const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(d.email)}&su=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.message)}`;
+          window.open(gmailUrl, '_blank', 'noopener');
+        }
+      }
+    }
+
+    function saveQuickContact() {
+      const input = document.getElementById('quickContactInput').value.trim();
+      if (!input || !state.lastDraft) return;
+
+      if (input.includes('@')) {
+        state.lastDraft.email = input;
+      } else {
+        state.lastDraft.phone = sanitizePhoneDigits(input);
+      }
+
+      // Also persist into directory
+      state.contacts.push({
+        id: 'c_' + Date.now(),
+        name: state.lastDraft.recipient,
+        phone: state.lastDraft.phone || '',
+        email: state.lastDraft.email || '',
+        aliases: []
+      });
+      saveContacts();
+      renderContactsList();
+      renderDispatchCard();
+      speakResponse("Contact saved to directory.");
+    }
+
+    function copyDraftToClipboard() {
+      if (!state.lastDraft) return;
+      const textarea = document.getElementById('dispatchMessageArea');
+      textarea.select();
+      document.execCommand('copy');
+      speakResponse("Message copied to clipboard.");
+    }
+
+    /* ====================================================================
+       7. LOCAL OS AUTO-SEND BRIDGE INTEGRATION (http://127.0.0.1:8765)
+       ==================================================================== */
+    async function checkBridgeHealth() {
+      const btn = document.getElementById('bridgeStatusBtn');
+      const text = document.getElementById('bridgeStatusText');
+      const footer = document.getElementById('footerBridgeLabel');
+      const modalDot = document.getElementById('modalBridgeDot');
+      const modalStatus = document.getElementById('modalBridgeStatus');
+
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch('http://127.0.0.1:8765/health', { signal: controller.signal });
+        clearTimeout(tid);
+
+        if (res.ok) {
+          state.bridgeOnline = true;
+          text.innerText = "Auto-Send: ON";
+          btn.className = "px-3 py-1.5 rounded-lg border text-xs font-hud font-semibold flex items-center gap-2 transition-all bg-emerald-950/40 border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]";
+          footer.innerText = "ONLINE (127.0.0.1:8765)";
+          footer.className = "text-emerald-400 font-hud";
+          modalDot.className = "w-3 h-3 rounded-full bg-emerald-400 animate-pulse";
+          modalStatus.innerText = "Bridge Online (127.0.0.1:8765)";
+          return;
+        }
+      } catch (e) {}
+
+      state.bridgeOnline = false;
+      text.innerText = "Auto-Send Bridge";
+      btn.className = "px-3 py-1.5 rounded-lg border text-xs font-hud font-semibold flex items-center gap-2 transition-all bg-slate-900/40 border-stark-cyan/40 text-stark-brightCyan";
+      footer.innerText = "OFFLINE";
+      footer.className = "text-rose-400 font-hud";
+      modalDot.className = "w-3 h-3 rounded-full bg-rose-500";
+      modalStatus.innerText = "Bridge Offline (Run jarvis_local.py)";
+    }
+
+    async function triggerBridgeWhatsappAutoSend(phone, name, message) {
+      try {
+        await fetch('http://127.0.0.1:8765/whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: phone,
+            name: name,
+            message: message,
+            wait_seconds: state.bridgeDelay
+          })
+        });
+      } catch (e) {
+        console.error("Bridge dispatch error", e);
+      }
+    }
+
+    async function triggerBridgeEmailAutoSend(toEmail, subject, bodyText) {
+      try {
+        await fetch('http://127.0.0.1:8765/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: toEmail,
+            subject: subject,
+            body: bodyText,
+            wait_seconds: state.bridgeDelay
+          })
+        });
+      } catch (e) {
+        console.error("Bridge email dispatch error", e);
+      }
+    }
+
+    function updateBridgeDelay(val) {
+      state.bridgeDelay = parseInt(val);
+      localStorage.setItem('jarvis_bridge_delay', val);
+      document.getElementById('delayValueLabel').innerText = val + ' Seconds';
+    }
+
+    // EMBEDDED PYTHON BRIDGE CODE GENERATOR (`jarvis_local.py`)
+    function downloadJarvisLocalScript() {
+      const scriptCode = `import http.server
+import socketserver
+import json
+import urllib.parse
+import webbrowser
+import time
+import sys
+import os
+
+# J.A.R.V.I.S. Local OS Auto-Send Bridge (v4.5)
+# Enables zero-popup blocking and hands-free automatic Enter key pressing
+
+try:
+    import pyautogui
+except ImportError:
+    pyautogui = None
+    print("[WARNING] 'pyautogui' module not installed. Automatic Enter pressing disabled.")
+    print("Install using: pip install pyautogui")
+
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
+PORT = 8765
+
+class JarvisBridgeHandler(http.server.BaseHTTPRequestHandler):
+    def _set_headers(self, status=200):
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.end_headers()
+
+    def do_OPTIONS(self):
+        self._set_headers(200)
+
+    def do_GET(self):
+        if self.path == '/health':
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"status": "ok", "bridge": "JARVIS_OS_BRIDGE_ONLINE"}).encode())
+        else:
+            self._set_headers(404)
+
+    def do_POST(self):
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length).decode('utf-8')
+        data = json.loads(body) if body else {}
+
+        if self.path == '/whatsapp':
+            phone = data.get('phone', '')
+            message = data.get('message', '')
+            wait_sec = int(data.get('wait_seconds', 14))
+
+            url = f"https://web.whatsapp.com/send?phone={phone}&text={urllib.parse.quote(message)}"
+            print(f"[JARVIS OS] Opening WhatsApp Web for phone: {phone}")
+            webbrowser.open(url)
+
+            if pyautogui:
+                print(f"[JARVIS OS] Waiting {wait_sec} seconds for WhatsApp Web chat load...")
+                time.sleep(wait_sec)
+                pyautogui.press('enter')
+                print("[JARVIS OS] Pressed ENTER automatically. Message sent!")
+
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"status": "dispatched", "app": "whatsapp"}).encode())
+
+        elif self.path == '/email':
+            to_email = data.get('to', '')
+            subject = data.get('subject', '')
+            body_text = data.get('body', '')
+            wait_sec = int(data.get('wait_seconds', 5))
+
+            gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={urllib.parse.quote(to_email)}&su={urllib.parse.quote(subject)}&body={urllib.parse.quote(body_text)}"
+            print(f"[JARVIS OS] Opening Gmail compose for: {to_email}")
+            webbrowser.open(gmail_url)
+
+            if pyautogui:
+                time.sleep(wait_sec)
+                # Ctrl+Enter (or Cmd+Enter on macOS) to send Gmail
+                pyautogui.hotkey('ctrl', 'enter')
+                print("[JARVIS OS] Pressed Ctrl+Enter on Gmail compose.")
+
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"status": "dispatched", "app": "email"}).encode())
+
+        elif self.path == '/open':
+            target_url = data.get('url', 'https://web.whatsapp.com')
+            webbrowser.open(target_url)
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"status": "opened"}).encode())
+        else:
+            self._set_headers(404)
+
+print("=====================================================")
+print("  J.A.R.V.I.S. LOCAL OS AUTO-SEND BRIDGE RUNNING     ")
+print(f"  Listening on: http://127.0.0.1:{PORT}           ")
+print("=====================================================")
+
+with socketserver.TCPServer(("127.0.0.1", PORT), JarvisBridgeHandler) as httpd:
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\\nShutting down J.A.R.V.I.S. OS Bridge.")
+`;
+
+      const blob = new Blob([scriptCode], { type: 'text/x-python' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'jarvis_local.py';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    /* ====================================================================
+       8. SPEECH RECOGNITION STATE MACHINE & 5-SECOND COUNTDOWN
+       ==================================================================== */
+    let recognition = null;
+    let recState = 'idle'; // 'idle' | 'starting' | 'listening' | 'stopping'
+    let countdownTimer = null;
+    let countdownSeconds = 5.0;
+    let useAudioRecorderFallback = false;
+    let mediaRecorder = null;
+    let mediaStream = null;
+    let audioChunks = [];
+    let cancelAudioRecording = false;
+    let recorderMaxTimer = null;
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        useAudioRecorderFallback = true;
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = function() {
+        recState = 'listening';
+        setOrbState('listening');
+        document.getElementById('liveTranscriptText').innerText = "Speak your command...";
+        document.getElementById('countdownText').innerText = "Listening...";
+        document.getElementById('countdownBar').style.width = "100%";
+        showVoiceTranscriptUI(true);
+      };
+
+      recognition.onresult = function(event) {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        
+        const cleanTranscript = transcript.trim();
+        document.getElementById('liveTranscriptText').innerText = cleanTranscript || "Listening...";
+        
+        // Reset 5.0 second silence countdown whenever user speaks
+        if (cleanTranscript) {
+          resetSilenceCountdown(cleanTranscript);
+        }
+      };
+
+      recognition.onerror = function(event) {
+        const errCode = event?.error || 'unknown';
+
+        // Ignore harmless idle / manual stop states
+        if (errCode === 'no-speech' || errCode === 'aborted') {
+          return;
+        }
+
+        // Browser cloud speech endpoint blocked or unreachable -> switch seamlessly to local MediaRecorder + Gemini transcription
+        if (errCode === 'network' || errCode === 'service-not-allowed') {
+          useAudioRecorderFallback = true;
+          stopVoiceCapture(true);
+          startAudioRecorderFallback();
+          return;
+        }
+
+        // Permission or hardware error -> notify gracefully in HUD without throwing console errors
+        stopVoiceCapture(true);
+        if (state.liveChatMode) toggleLiveChatMode();
+        const friendlyMsg = (errCode === 'not-allowed' || errCode === 'audio-capture')
+          ? "Microphone access is blocked or unavailable in this browser. Please allow mic permissions or type your command in the bar below, sir."
+          : `Voice recognition is temporarily unavailable (${errCode}). You can type your command directly below, sir.`;
+        displayResponseCard(friendlyMsg);
+        const cmdInput = document.getElementById('commandInput');
+        if (cmdInput) cmdInput.focus();
+      };
+
+      recognition.onend = function() {
+        recState = 'idle';
+        if (state.orbState === 'listening' && (!mediaRecorder || mediaRecorder.state !== 'recording')) {
+          setOrbState('idle');
+        }
+      };
+    }
+
+    function isAudioRecorderActive() {
+      return Boolean(mediaRecorder && mediaRecorder.state === 'recording');
+    }
+
+    function cleanupMediaStream() {
+      if (recorderMaxTimer) {
+        clearTimeout(recorderMaxTimer);
+        recorderMaxTimer = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => {
+          try { t.stop(); } catch (_) {}
+        });
+        mediaStream = null;
+      }
+      mediaRecorder = null;
+    }
+
+    async function startAudioRecorderFallback() {
+      if (isAudioRecorderActive()) return;
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+        if (state.liveChatMode) toggleLiveChatMode();
+        displayResponseCard("Browser speech cloud is unreachable and local audio recording isn't supported here. Please type your command in the bar below, sir.");
+        const cmdInput = document.getElementById('commandInput');
+        if (cmdInput) cmdInput.focus();
+        return;
+      }
+
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        cancelAudioRecording = false;
+
+        const preferredMime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
+          .find(type => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) || '';
+        mediaRecorder = preferredMime ? new MediaRecorder(mediaStream, { mimeType: preferredMime }) : new MediaRecorder(mediaStream);
+
+        mediaRecorder.ondataavailable = function(e) {
+          if (e.data && e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async function() {
+          const wasCancelled = cancelAudioRecording;
+          const mimeType = (mediaRecorder && mediaRecorder.mimeType) || preferredMime || 'audio/webm';
+          const recordedChunks = audioChunks.slice();
+          audioChunks = [];
+          cleanupMediaStream();
+          showVoiceTranscriptUI(false);
+
+          if (wasCancelled || recordedChunks.length === 0) {
+            setOrbState('idle');
+            return;
+          }
+
+          await transcribeRecordedAudio(new Blob(recordedChunks, { type: mimeType }), mimeType);
+        };
+
+        mediaRecorder.start();
+        setOrbState('listening');
+        document.getElementById('liveTranscriptText').innerText = "Recording locally via J.A.R.V.I.S. AI Mic — tap the Orb or click 'Send Now' when finished speaking.";
+        document.getElementById('countdownText').innerText = "AI Mic Active";
+        document.getElementById('countdownBar').style.width = "100%";
+        showVoiceTranscriptUI(true);
+
+        // Safety cap at 20 seconds so recordings stay fast to transcribe
+        recorderMaxTimer = setTimeout(() => {
+          if (isAudioRecorderActive()) forceSendVoiceCapture();
+        }, 20000);
+      } catch (err) {
+        cleanupMediaStream();
+        setOrbState('idle');
+        showVoiceTranscriptUI(false);
+        if (state.liveChatMode) toggleLiveChatMode();
+        displayResponseCard("Browser speech service is offline and microphone permission wasn't granted. Please type your command in the bar below, sir.");
+        const cmdInput = document.getElementById('commandInput');
+        if (cmdInput) cmdInput.focus();
+      }
+    }
+
+    async function transcribeRecordedAudio(audioBlob, rawMimeType) {
+      setOrbState('thinking');
+      displayResponseCard("Transcribing your voice command via J.A.R.V.I.S. AI...");
+
+      try {
+        const base64Audio = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = String(reader.result || '');
+            const idx = dataUrl.indexOf(',');
+            resolve(idx !== -1 ? dataUrl.slice(idx + 1) : '');
+          };
+          reader.onerror = () => reject(new Error("Could not read recorded audio."));
+          reader.readAsDataURL(audioBlob);
+        });
+
+        if (!base64Audio) throw new Error("Empty audio capture.");
+
+        const cleanMime = (rawMimeType || 'audio/webm').split(';')[0].trim();
+        const res = await callGeminiApi(
+          "Transcribe the spoken audio accurately into plain text. Return ONLY the exact spoken words without quotes, labels, or explanations. If no speech is audible, return an empty string.",
+          { allowSearch: false, inlineAudio: { mimeType: cleanMime, data: base64Audio } }
+        );
+
+        const spokenText = (res.text || '').trim();
+        if (!spokenText) {
+          setOrbState('idle');
+          displayResponseCard("I didn't catch any speech in that recording, sir. Tap the Orb to try again or type below.");
+          return;
+        }
+
+        document.getElementById('commandInput').value = spokenText;
+        handleCommandSubmit();
+      } catch (err) {
+        setOrbState('idle');
+        displayResponseCard("Could not transcribe the audio recording right now. You can type your command directly below, sir.");
+        const cmdInput = document.getElementById('commandInput');
+        if (cmdInput) cmdInput.focus();
+      }
+    }
+
+    function toggleVoiceCapture() {
+      if (isAudioRecorderActive()) {
+        forceSendVoiceCapture();
+        return;
+      }
+      if (recState === 'idle') {
+        startVoiceCapture();
+      } else {
+        const currentText = document.getElementById('liveTranscriptText').innerText.trim();
+        if (currentText && currentText !== "Listening..." && currentText !== "Speak your command...") {
+          forceSendVoiceCapture();
+        } else {
+          stopVoiceCapture();
+        }
+      }
+    }
+
+    function startVoiceCapture() {
+      if (useAudioRecorderFallback || !recognition) {
+        startAudioRecorderFallback();
+        return;
+      }
+      if (recState !== 'idle') return;
+      try {
+        recState = 'starting';
+        recognition.start();
+      } catch (e) {
+        recState = 'idle';
+      }
+    }
+
+    function stopVoiceCapture(keepFallbackState = false) {
+      if (recognition && recState !== 'idle') {
+        try {
+          recState = 'stopping';
+          recognition.stop();
+        } catch (e) {
+          recState = 'idle';
+        }
+      }
+      if (!keepFallbackState && isAudioRecorderActive()) {
+        cancelAudioRecording = true;
+        try { mediaRecorder.stop(); } catch (_) { cleanupMediaStream(); }
+      }
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      if (!keepFallbackState) {
+        showVoiceTranscriptUI(false);
+        setOrbState('idle');
+      }
+    }
+
+    function resetSilenceCountdown(currentTranscript) {
+      clearInterval(countdownTimer);
+      countdownSeconds = 5.0;
+
+      const bar = document.getElementById('countdownBar');
+      const label = document.getElementById('countdownText');
+
+      countdownTimer = setInterval(() => {
+        countdownSeconds -= 0.1;
+        if (countdownSeconds <= 0) {
+          clearInterval(countdownTimer);
+          forceSendVoiceCapture();
+        } else {
+          label.innerText = `Auto-sending in ${countdownSeconds.toFixed(1)}s`;
+          bar.style.width = `${(countdownSeconds / 5.0) * 100}%`;
+        }
+      }, 100);
+    }
+
+    function forceSendVoiceCapture() {
+      if (isAudioRecorderActive()) {
+        cancelAudioRecording = false;
+        try { mediaRecorder.stop(); } catch (_) { cleanupMediaStream(); }
+        return;
+      }
+      const text = document.getElementById('liveTranscriptText').innerText.trim();
+      stopVoiceCapture();
+      if (text && text !== "Listening..." && text !== "Speak your command...") {
+        document.getElementById('commandInput').value = text;
+        handleCommandSubmit();
+      }
+    }
+
+    function cancelVoiceCapture() {
+      stopVoiceCapture();
+      document.getElementById('liveTranscriptText').innerText = "Speak your command...";
+    }
+
+    function showVoiceTranscriptUI(visible) {
+      const container = document.getElementById('voiceTranscriptContainer');
+      if (visible) {
+        container.classList.remove('hidden');
+        container.classList.add('flex');
+      } else {
+        container.classList.add('hidden');
+        container.classList.remove('flex');
+      }
+    }
+
+    function toggleLiveChatMode() {
+      state.liveChatMode = !state.liveChatMode;
+      const btn = document.getElementById('liveChatToggleBtn');
+      const badge = document.getElementById('liveChatBadge');
+
+      if (state.liveChatMode) {
+        btn.className = "px-3 py-2 rounded-xl text-xs font-hud border transition-all bg-emerald-500/20 border-emerald-500 text-emerald-400";
+        badge.classList.remove('hidden');
+        startVoiceCapture();
+      } else {
+        btn.className = "px-3 py-2 rounded-xl text-xs font-hud border transition-all bg-slate-900/60 border-slate-700 text-slate-400";
+        badge.classList.add('hidden');
+        stopVoiceCapture();
+      }
+    }
+
+    /* ====================================================================
+       9. VOICE SYNTHESIS (Fish Audio API + Browser Native Fallback)
+       ==================================================================== */
+    function speakResponse(textToSpeak) {
+      if (!textToSpeak) return;
+
+      setOrbState('speaking');
+
+      if (state.voiceEngine === 'fish' && state.fishApiKey) {
+        speakViaFishAudio(textToSpeak);
+      } else {
+        speakViaBrowserSynthesis(textToSpeak);
+      }
+    }
+
+    function speakViaBrowserSynthesis(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel(); // Stop ongoing speech
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.pitch = state.voicePitch;
+      utterance.rate = state.voiceRate;
+
+      const voices = window.speechSynthesis.getVoices();
+      if (state.selectedBrowserVoiceURI) {
+        const found = voices.find(v => v.voiceURI === state.selectedBrowserVoiceURI);
+        if (found) utterance.voice = found;
+      } else {
+        // Prefer British Male voice for Jarvis
+        const britishMale = voices.find(v => v.lang.includes('en-GB') && v.name.toLowerCase().includes('male')) ||
+                            voices.find(v => v.lang.includes('en-GB')) ||
+                            voices.find(v => v.lang.includes('en-US'));
+        if (britishMale) utterance.voice = britishMale;
+      }
+
+      utterance.onend = function() {
+        setOrbState('idle');
+        if (state.liveChatMode) {
+          setTimeout(startVoiceCapture, 500);
+        }
+      };
+
+      utterance.onerror = function() {
+        setOrbState('idle');
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function speakViaFishAudio(text) {
+      try {
+        const res = await fetch('https://api.fish.audio/v1/tts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${state.fishApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: text,
+            reference_id: state.fishRefId || 's2.1-pro-free',
+            format: 'mp3'
+          })
+        });
+
+        if (!res.ok) throw new Error("Fish Audio API error");
+
+        const blob = await res.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+
+        audio.onended = function() {
+          setOrbState('idle');
+          if (state.liveChatMode) {
+            setTimeout(startVoiceCapture, 500);
+          }
+        };
+
+        audio.play();
+      } catch (e) {
+        console.warn("Fish Audio failed, falling back to browser voice", e);
+        speakViaBrowserSynthesis(text);
+      }
+    }
+
+    function populateBrowserVoices() {
+      if (!window.speechSynthesis) return;
+      const select = document.getElementById('browserVoiceSelect');
+      const voices = window.speechSynthesis.getVoices();
+      select.innerHTML = '';
+
+      voices.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.voiceURI;
+        opt.innerText = `${v.name} (${v.lang})`;
+        if (v.voiceURI === state.selectedBrowserVoiceURI) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function speakTestPhrase() {
+      speakResponse("Initializing system audio check. All audio channels functioning at peak efficiency.");
+    }
+
+    /* ====================================================================
+       10. ANIMATED CANVAS J.A.R.V.I.S. ORB CENTERPIECE
+       ==================================================================== */
+    let canvas, ctx;
+    let orbAngle = 0;
+
+    function initCanvasOrb() {
+      canvas = document.getElementById('jarvisCanvas');
+      if (!canvas) return;
+      ctx = canvas.getContext('2d');
+      requestAnimationFrame(renderOrbFrame);
+    }
+
+    function setOrbState(newState) {
+      state.orbState = newState;
+      const label = document.getElementById('orbStatusText');
+      const dot = document.getElementById('orbStatusDot');
+      const glowRing = document.getElementById('orbGlowRing');
+
+      if (newState === 'listening') {
+        label.innerText = "JARVIS LISTENING...";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping";
+        glowRing.className = "absolute w-80 h-80 rounded-full bg-rose-500/30 blur-3xl transition-all duration-300";
+      } else if (newState === 'thinking') {
+        label.innerText = "PROCESSING STARK PROTOCOL...";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-spin";
+        glowRing.className = "absolute w-80 h-80 rounded-full bg-amber-500/30 blur-3xl transition-all duration-300";
+      } else if (newState === 'speaking') {
+        label.innerText = "JARVIS SPEAKING...";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+        glowRing.className = "absolute w-80 h-80 rounded-full bg-emerald-500/30 blur-3xl transition-all duration-300";
+      } else {
+        label.innerText = "JARVIS ONLINE & STANDING BY";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-stark-brightCyan animate-pulse";
+        glowRing.className = "absolute w-72 h-72 rounded-full bg-stark-cyan/20 blur-3xl transition-all duration-500";
+      }
+    }
+
+    function renderOrbFrame() {
+      if (!ctx) return;
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      orbAngle += 0.02;
+
+      let primaryColor = "#06b6d4";
+      let secondaryColor = "#22d3ee";
+
+      if (state.orbState === 'listening') {
+        primaryColor = "#f43f5e";
+        secondaryColor = "#fda4af";
+      } else if (state.orbState === 'thinking') {
+        primaryColor = "#f59e0b";
+        secondaryColor = "#fcd34d";
+      } else if (state.orbState === 'speaking') {
+        primaryColor = "#10b981";
+        secondaryColor = "#6ee7b7";
+      }
+
+      // Outer Rotating Arc Ring 1
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(orbAngle);
+      ctx.beginPath();
+      ctx.arc(0, 0, 130, 0, Math.PI * 1.4);
+      ctx.strokeStyle = primaryColor;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([12, 8]);
+      ctx.stroke();
+      ctx.restore();
+
+      // Counter-Rotating Segmented Ring 2
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-orbAngle * 1.5);
+      ctx.beginPath();
+      ctx.arc(0, 0, 105, 0, Math.PI * 0.8);
+      ctx.strokeStyle = secondaryColor;
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // Pulsing Center Core Sphere
+      const pulseRadius = 65 + Math.sin(orbAngle * 4) * (state.orbState === 'speaking' ? 8 : 3);
+      const gradient = ctx.createRadialGradient(cx, cy, 5, cx, cy, pulseRadius);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(0.4, secondaryColor);
+      gradient.addColorStop(1, 'rgba(6,182,212,0.05)');
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, pulseRadius, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.strokeStyle = primaryColor;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Sonic Ripples when listening or speaking
+      if (state.orbState === 'listening' || state.orbState === 'speaking') {
+        const waveRadius = (orbAngle * 60) % 150;
+        ctx.beginPath();
+        ctx.arc(cx, cy, waveRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = Math.max(0, 1 - (waveRadius / 150));
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+      }
+
+      requestAnimationFrame(renderOrbFrame);
+    }
+
+    /* ====================================================================
+       11. DASHBOARD & UI AUXILIARY HELPERS
+       ==================================================================== */
+    function switchMainView(view) {
+      const orbView = document.getElementById('orbViewContainer');
+      const dashView = document.getElementById('dashViewContainer');
+      const orbBtn = document.getElementById('navOrbBtn');
+      const dashBtn = document.getElementById('navDashBtn');
+
+      if (view === 'orb') {
+        orbView.classList.remove('hidden');
+        orbView.classList.add('flex');
+        dashView.classList.add('hidden');
+        dashView.classList.remove('flex');
+        orbBtn.className = "px-4 py-1.5 rounded-lg text-xs font-hud font-semibold transition-all bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]";
+        dashBtn.className = "px-4 py-1.5 rounded-lg text-xs font-hud font-semibold text-slate-400 hover:text-cyan-300 transition-all";
+      } else {
+        dashView.classList.remove('hidden');
+        dashView.classList.add('flex');
+        orbView.classList.add('hidden');
+        orbView.classList.remove('flex');
+        dashBtn.className = "px-4 py-1.5 rounded-lg text-xs font-hud font-semibold transition-all bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]";
+        orbBtn.className = "px-4 py-1.5 rounded-lg text-xs font-hud font-semibold text-slate-400 hover:text-cyan-300 transition-all";
+      }
+    }
+
+    function switchDashTab(tab) {
+      const c = document.getElementById('dashContentContacts');
+      const h = document.getElementById('dashContentHistory');
+      const t = document.getElementById('dashContentTasks');
+      const btnC = document.getElementById('dashTabContacts');
+      const btnH = document.getElementById('dashTabHistory');
+      const btnT = document.getElementById('dashTabTasks');
+
+      c.classList.add('hidden'); h.classList.add('hidden'); t.classList.add('hidden');
+      btnC.className = "px-4 py-2 rounded-lg text-xs font-hud font-bold text-slate-400 hover:text-cyan-300";
+      btnH.className = "px-4 py-2 rounded-lg text-xs font-hud font-bold text-slate-400 hover:text-cyan-300";
+      btnT.className = "px-4 py-2 rounded-lg text-xs font-hud font-bold text-slate-400 hover:text-cyan-300";
+
+      if (tab === 'contacts') {
+        c.classList.remove('hidden');
+        btnC.className = "px-4 py-2 rounded-lg text-xs font-hud font-bold bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50";
+      } else if (tab === 'history') {
+        h.classList.remove('hidden');
+        btnH.className = "px-4 py-2 rounded-lg text-xs font-hud font-bold bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50";
+      } else {
+        t.classList.remove('hidden');
+        btnT.className = "px-4 py-2 rounded-lg text-xs font-hud font-bold bg-stark-cyan/30 text-stark-brightCyan border border-stark-cyan/50";
+      }
+    }
+
+    function displayResponseCard(text, cardType = "text", groundingSources = []) {
+      const container = document.getElementById('responseCardContainer');
+      const output = document.getElementById('responseTextOutput');
+      const timeLabel = document.getElementById('responseTimestamp');
+      const sourcesBox = document.getElementById('groundingSourcesContainer');
+
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+      output.innerText = text;
+      timeLabel.innerText = new Date().toLocaleTimeString();
+
+      // Render grounding sources
+      sourcesBox.innerHTML = '<span class="text-[10px] font-hud text-slate-400 flex items-center gap-1"><i class="fa-solid fa-globe"></i> SOURCES:</span>';
+      if (groundingSources && groundingSources.length > 0) {
+        sourcesBox.classList.remove('hidden');
+        sourcesBox.classList.add('flex');
+        groundingSources.forEach(s => {
+          const pill = document.createElement('a');
+          pill.href = s.uri;
+          pill.target = "_blank";
+          pill.className = "text-[10px] px-2 py-0.5 rounded bg-stark-cyan/20 border border-stark-cyan/40 text-stark-brightCyan hover:underline";
+          pill.innerText = s.title;
+          sourcesBox.appendChild(pill);
+        });
+      } else {
+        sourcesBox.classList.add('hidden');
+      }
+    }
+
+    function closeMediaPlayer() {
+      document.getElementById('youtubeIframe').src = "";
+      document.getElementById('mediaPlayerCard').classList.add('hidden');
+    }
+
+    /* ====================================================================
+       12. CONTACTS DIRECTORY CRUD & LOCALSTORAGE
+       ==================================================================== */
+    function renderContactsList() {
+      const grid = document.getElementById('contactsGrid');
+      const modalList = document.getElementById('modalContactsList');
+
+      grid.innerHTML = '';
+      modalList.innerHTML = '';
+
+      state.contacts.forEach(c => {
+        // Dashboard Contact Card
+        const card = document.createElement('div');
+        card.className = "hud-card p-3 rounded-xl flex flex-col justify-between gap-2 border-stark-border hover:border-stark-cyan transition-all";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="font-hud font-bold text-sm text-stark-brightCyan">${c.name}</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">${c.aliases.join(', ') || 'No Aliases'}</span>
+            </div>
+            <p class="text-xs font-mono text-emerald-400 mt-1"><i class="fa-brands fa-whatsapp mr-1"></i> ${c.phone || 'No Phone'}</p>
+            <p class="text-xs font-mono text-slate-300"><i class="fa-solid fa-envelope mr-1"></i> ${c.email || 'No Email'}</p>
+          </div>
+          <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <button onclick="editContact('${c.id}')" class="text-xs font-hud text-stark-brightCyan hover:underline">Edit</button>
+            <button onclick="deleteContact('${c.id}')" class="text-xs font-hud text-rose-400 hover:underline">Delete</button>
+          </div>
+        `;
+        grid.appendChild(card);
+
+        // Modal Contact Row
+        const row = document.createElement('div');
+        row.className = "bg-black/50 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs";
+        row.innerHTML = `
+          <div>
+            <strong class="text-white font-hud">${c.name}</strong> 
+            <span class="text-slate-400 font-mono">(${c.phone || 'No phone'} | ${c.email || 'No email'})</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="editContact('${c.id}')" class="text-stark-cyan"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="deleteContact('${c.id}')" class="text-rose-400"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        `;
+        modalList.appendChild(row);
+      });
+    }
+
+    function saveContactForm(e) {
+      e.preventDefault();
+      const editId = document.getElementById('contactEditId').value;
+      const name = document.getElementById('contactNameInput').value.trim();
+      const phone = sanitizePhoneDigits(document.getElementById('contactPhoneInput').value.trim());
+      const email = document.getElementById('contactEmailInput').value.trim();
+      const aliasesStr = document.getElementById('contactAliasesInput').value.trim();
+      const aliases = aliasesStr ? aliasesStr.split(',').map(a => a.trim()) : [];
+
+      if (editId) {
+        const idx = state.contacts.findIndex(c => c.id === editId);
+        if (idx !== -1) {
+          state.contacts[idx] = { id: editId, name, phone, email, aliases };
+        }
+      } else {
+        state.contacts.push({ id: 'c_' + Date.now(), name, phone, email, aliases });
+      }
+
+      saveContacts();
+      renderContactsList();
+      closeModal('addContactModal');
+      speakResponse("Contact updated successfully, sir.");
+    }
+
+    function editContact(id) {
+      const c = state.contacts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById('contactEditId').value = c.id;
+      document.getElementById('contactNameInput').value = c.name;
+      document.getElementById('contactPhoneInput').value = c.phone;
+      document.getElementById('contactEmailInput').value = c.email;
+      document.getElementById('contactAliasesInput').value = c.aliases.join(', ');
+      document.getElementById('addContactTitle').innerText = "EDIT STARK CONTACT";
+      openModal('addContactModal');
+    }
+
+    function deleteContact(id) {
+      state.contacts = state.contacts.filter(c => c.id !== id);
+      saveContacts();
+      renderContactsList();
+    }
+
+    function saveContacts() {
+      localStorage.setItem('jarvis_contacts', JSON.stringify(state.contacts));
+    }
+
+    /* ====================================================================
+       13. TASKS & HISTORY LOGGING
+       ==================================================================== */
+    function renderTaskList() {
+      const ul = document.getElementById('taskList');
+      ul.innerHTML = '';
+      state.tasks.forEach(t => {
+        const li = document.createElement('li');
+        li.className = "flex items-center justify-between bg-black/40 p-2 rounded border border-slate-800";
+        li.innerHTML = `
+          <label class="flex items-center gap-2 cursor-pointer ${t.done ? 'line-through text-slate-500' : 'text-slate-200'}">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone('${t.id}')" class="accent-stark-cyan">
+            <span>${t.text}</span>
+          </label>
+          <button onclick="deleteTask('${t.id}')" class="text-rose-400 text-xs"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    function addNewTask() {
+      const input = document.getElementById('newTaskInput');
+      const text = input.value.trim();
+      if (!text) return;
+      state.tasks.push({ id: 't_' + Date.now(), text, done: false });
+      input.value = '';
+      saveTasks();
+      renderTaskList();
+    }
+
+    function toggleTaskDone(id) {
+      const t = state.tasks.find(x => x.id === id);
+      if (t) { t.done = !t.done; saveTasks(); renderTaskList(); }
+    }
+
+    function deleteTask(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      saveTasks();
+      renderTaskList();
+    }
+
+    function saveTasks() {
+      localStorage.setItem('jarvis_tasks', JSON.stringify(state.tasks));
+    }
+
+    function logHistory(query, reply) {
+      state.historyLogs.unshift({ timestamp: new Date().toLocaleTimeString(), query, reply });
+      if (state.historyLogs.length > 50) state.historyLogs.pop();
+      localStorage.setItem('jarvis_history', JSON.stringify(state.historyLogs));
+      renderHistoryList();
+    }
+
+    function renderHistoryList() {
+      const list = document.getElementById('historyLogList');
+      list.innerHTML = '';
+      state.historyLogs.forEach(h => {
+        const div = document.createElement('div');
+        div.className = "bg-black/50 p-2.5 rounded-xl border border-slate-800 text-xs font-sans";
+        div.innerHTML = `
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+            <span>USER COMMAND</span>
+            <span>${h.timestamp}</span>
+          </div>
+          <p class="font-bold text-stark-brightCyan mt-0.5">"${h.query}"</p>
+          <p class="text-slate-300 mt-1 italic">${h.reply}</p>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    /* ====================================================================
+       14. CONFIG SAVE & MODAL MANAGERS
+       ==================================================================== */
+    function saveAiConfig() {
+      state.geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+      state.geminiModel = document.getElementById('geminiModelSelect').value;
+      state.useSearchGrounding = document.getElementById('searchGroundingToggle').checked;
+
+      localStorage.setItem('jarvis_gemini_key', state.geminiApiKey);
+      localStorage.setItem('jarvis_gemini_model', state.geminiModel);
+      localStorage.setItem('jarvis_search_grounding', state.useSearchGrounding);
+
+      document.getElementById('activeModelLabel').innerText = state.geminiModel;
+      closeModal('aiModal');
+      speakResponse("AI Brain settings saved and recalibrated.");
+    }
+
+    async function testAiConnection() {
+      const statusBox = document.getElementById('aiTestStatus');
+      state.geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+      state.geminiModel = document.getElementById('geminiModelSelect').value;
+
+      if (statusBox) {
+        statusBox.className = "text-xs font-mono p-2.5 rounded-xl border border-stark-cyan/40 bg-stark-cyan/10 text-stark-brightCyan leading-relaxed";
+        statusBox.innerText = "Discovering available models & testing Gemini AI connection...";
+        statusBox.classList.remove('hidden');
+      }
+
+      try {
+        await discoverAvailableModels(state.geminiApiKey);
+        const res = await callGeminiApi("Respond with 'AI Brain System Nominal.'", { allowSearch: false });
+        if (statusBox) {
+          statusBox.className = "text-xs font-mono p-2.5 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 leading-relaxed";
+          statusBox.innerText = `Connected (${state.geminiModel}): ${res.text || "AI Connection Active."}`;
+        }
+        syncActiveModelUI(state.geminiModel);
+      } catch (e) {
+        if (statusBox) {
+          statusBox.className = "text-xs font-mono p-2.5 rounded-xl border border-rose-500/50 bg-rose-950/40 text-rose-300 leading-relaxed";
+          statusBox.innerText = "AI Connection Test Failed: " + e.message;
+        }
+      }
+    }
+
+    function saveVoiceConfig() {
+      const engines = document.getElementsByName('voiceEngine');
+      engines.forEach(r => { if (r.checked) state.voiceEngine = r.value; });
+
+      state.fishApiKey = document.getElementById('fishApiKeyInput').value.trim();
+      state.fishRefId = document.getElementById('fishRefIdInput').value.trim();
+      state.selectedBrowserVoiceURI = document.getElementById('browserVoiceSelect').value;
+      state.voicePitch = parseFloat(document.getElementById('voicePitch').value);
+      state.voiceRate = parseFloat(document.getElementById('voiceRate').value);
+
+      localStorage.setItem('jarvis_voice_engine', state.voiceEngine);
+      localStorage.setItem('jarvis_fish_key', state.fishApiKey);
+      localStorage.setItem('jarvis_fish_ref_id', state.fishRefId);
+      localStorage.setItem('jarvis_browser_voice', state.selectedBrowserVoiceURI);
+      localStorage.setItem('jarvis_voice_pitch', state.voicePitch);
+      localStorage.setItem('jarvis_voice_rate', state.voiceRate);
+
+      closeModal('voiceModal');
+      speakResponse("Voice configuration updated successfully.");
+    }
+
+    function toggleVoiceEngineUI() {
+      const isBrowser = document.querySelector('input[name="voiceEngine"]:checked').value === 'browser';
+      document.getElementById('browserVoiceControls').classList.toggle('hidden', !isBrowser);
+      document.getElementById('fishVoiceControls').classList.toggle('hidden', isBrowser);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
