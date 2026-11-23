@@ -1,0 +1,16 @@
+{
+  "name": "J.A.R.V.I.S. Personal OS",
+  "short_name": "J.A.R.V.I.S.",
+  "start_url": "/jarvis-os/",
+  "scope": "/jarvis-os/",
+  "display": "standalone",
+  "background_color": "#02060d",
+  "theme_color": "#02060d",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/4712/4712035.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
