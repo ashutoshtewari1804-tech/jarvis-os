@@ -825,12 +825,12 @@
         .map(c => `${c.name} (phone: ${c.phone || 'none'}, email: ${c.email || 'none'}, aliases: ${(c.aliases || []).join('/')})`)
         .join('; ');
 
-      const promptText = `You are J.A.R.V.I.S., Tony Stark's intelligent personal assistant.
+      const promptText = `You are J.A.R.V.I.S., Tony Stark's intelligent personal assistant with an ACTIVE Local Windows OS Bridge (${state.bridgeOnline ? 'ONLINE' : 'OFFLINE'}).
 Saved contacts: ${contactsContext}
 
 Analyze the user's command: "${rawQuery}"
 
-Return ONLY a valid JSON object (no markdown fences, no commentary) using one of these schemas:
+Return ONLY a valid single-line JSON object (no markdown fences, escape newlines as \\n) using one of these schemas:
 1. WhatsApp message:
 {"action":"whatsapp","recipient":"Contact Name or Phone","message":"ONLY the clean, natural final message body to send — NEVER repeat the user's command instructions","spoken_reply":"Short confirmation in J.A.R.V.I.S. style"}
 2. Email:
@@ -839,9 +839,11 @@ Return ONLY a valid JSON object (no markdown fences, no commentary) using one of
 {"action":"play_media","query":"Exact search query for YouTube","spoken_reply":"Short confirmation"}
 4. Add task:
 {"action":"add_task","task":"Task description","spoken_reply":"Short confirmation"}
-5. General answer / chat:
+5. Local Windows OS control (open apps like calculator/notepad/chrome/vscode/whatsapp/spotify/settings/explorer, press Windows Start button or search Start, hotkeys like ["alt","tab"] or ["win","d"], media/volume keys like "volumemute"/"volumeup"/"volumedown"/"playpause", type text, click x/y, or find files):
+{"action":"local_os","bridge_payload":{"action":"open_app","app":"calculator"},"message":"Opening Calculator, Sir.","spoken_reply":"Opening Calculator, Sir."}
+(Valid bridge_payload formats: {"action":"open_app","app":"notepad"} | {"action":"windows_start","query":"","press_enter":false} | {"action":"hotkey","keys":["alt","tab"]} | {"action":"media_key","key":"volumemute"} | {"action":"type_text","text":"hello","press_enter":false} | {"action":"click","x":500,"y":300} | {"action":"find_file","query":"resume"})
+6. General answer / chat:
 {"action":"chat","message":"Helpful, accurate, concise response","spoken_reply":"Natural spoken version of the response"}`;
-
       try {
         const result = await callGeminiApi(promptText, { allowSearch: needsWebSearch });
         let parsed = parseAiJsonResponse(result.text);
@@ -1112,21 +1114,32 @@ Return ONLY a valid JSON object (no markdown fences, no commentary) using one of
     }
 
     // Robust JSON Parser with regex balance extraction
-    function parseAiJsonResponse(rawText) {
+   function parseAiJsonResponse(rawText) {
       if (!rawText) return null;
-      try {
-        // Strip markdown code fences if present
-        let clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const firstBrace = clean.indexOf('{');
-        const lastBrace = clean.lastIndexOf('}');
-        if (firstBrace !== -1 && lastBrace !== -1) {
-          clean = clean.substring(firstBrace, lastBrace + 1);
-          return JSON.parse(clean);
-        }
-      } catch (e) {
-        console.warn("JSON Parse warning, using regex extract", e);
+      let clean = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      const firstBrace = clean.indexOf('{');
+      const lastBrace = clean.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        clean = clean.substring(firstBrace, lastBrace + 1);
       }
-      return null;
+      try {
+        return JSON.parse(clean);
+      } catch (e) {
+        const sanitized = clean.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (m) =>
+          m.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+        );
+        try {
+          return JSON.parse(sanitized);
+        } catch (e2) {
+          const msgMatch = clean.match(/"message"\s*:\s*"([\s\S]*?)"\s*(?:,|\})/);
+          if (msgMatch) {
+            const text = msgMatch[1].replace(/\\n/g, '\n');
+            return { action: 'chat', message: text, spoken_reply: text };
+          }
+          console.warn("JSON Parse warning, using fallback", e2);
+          return null;
+        }
+      }
     }
 
     // Fallback Offline Parser
@@ -1190,7 +1203,16 @@ Return ONLY a valid JSON object (no markdown fences, no commentary) using one of
       const spokenReply = actionObj.spoken_reply || "Task complete, sir.";
 
       speakResponse(spokenReply);
-
+if (action === 'local_os' && actionObj.bridge_payload) {
+       const reply = actionObj.message || spokenReply;
+       displayResponseCard(reply, "dispatch", groundingSources);
+       fetch('http://127.0.0.1:8765/run', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(actionObj.bridge_payload)
+       }).catch(err => console.error('Bridge error:', err));
+       return;
+     }
       if (action === 'whatsapp') {
         const contact = resolveContact(actionObj.recipient);
         const cleanPhone = sanitizePhoneDigits(contact ? contact.phone : actionObj.recipient);
