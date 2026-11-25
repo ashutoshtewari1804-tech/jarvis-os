@@ -856,9 +856,9 @@ Return ONLY a valid single-line JSON object (no markdown fences, escape newlines
 {"action":"play_media","query":"Exact search query for YouTube","spoken_reply":"Short confirmation"}
 4. Add task:
 {"action":"add_task","task":"Task description","spoken_reply":"Short confirmation"}
-5. Local Windows OS control (open apps like calculator/notepad/chrome/vscode/whatsapp/spotify/settings/explorer, press Windows Start button or search Start, hotkeys like ["alt","tab"] or ["win","d"], media/volume keys like "volumemute"/"volumeup"/"volumedown"/"playpause", type text, click x/y, or find files):
-{"action":"local_os","bridge_payload":{"action":"open_app","app":"calculator"},"message":"Opening Calculator, Sir.","spoken_reply":"Opening Calculator, Sir."}
-(Valid bridge_payload formats: {"action":"open_app","app":"notepad"} | {"action":"windows_start","query":"","press_enter":false} | {"action":"hotkey","keys":["alt","tab"]} | {"action":"media_key","key":"volumemute"} | {"action":"type_text","text":"hello","press_enter":false} | {"action":"click","x":500,"y":300} | {"action":"find_file","query":"resume"})
+5. Local Windows OS control (supports single OR multiple chained actions in "steps", including apps via open_app and websites via open_url):
+{"action":"local_os","bridge_payload":{"action":"sequence","steps":[{"action":"open_url","url":"https://gemini.google.com"},{"action":"open_app","app":"telegram"}]},"message":"Launching Gemini and Telegram, Sir.","spoken_reply":"Launching Gemini and Telegram, Sir."}
+(Valid step types inside steps: {"action":"open_app","app":"telegram"} |{"action":"open_url","url":"https://gemini.google.com"} |{"action":"wait","seconds":1.5} |{"action":"windows_start","query":"","press_enter":false} |{"action":"hotkey","keys":["alt","tab"]} |{"action":"hotkey","keys":["alt","tab"]} |{"action":"type_text","text":"hello","press_enter":false} |{"action":"click","x":500,"y":300})
 6. General answer / chat:
 {"action":"chat","message":"Helpful, accurate, concise response","spoken_reply":"Natural spoken version of the response"}`;
       try {
