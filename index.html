@@ -831,6 +831,20 @@
         isProcessingJarvisCommand = true;
         lastJarvisQuery = cleanQuery.toLowerCase();
         lastJarvisQueryTime = now;
+        const quickLower = cleanQuery.toLowerCase();
+    if (quickLower.startsWith('open ') || quickLower.startsWith('launch ')) {
+      const directAction = fallbackCommandParser(cleanQuery, '');
+      executeAiAction(directAction, cleanQuery, []);
+      isProcessingJarvisCommand = false;
+      return;
+    }
+      const quickLower = cleanQuery.toLowerCase();
+    if (quickLower.startsWith('open ') || quickLower.startsWith('launch ')) {
+      const directAction = fallbackCommandParser(cleanQuery, '');
+      executeAiAction(directAction, cleanQuery, []);
+      isProcessingJarvisCommand = false;
+      return;
+    }  
       setOrbState('thinking');
       displayResponseCard('Analyzing command with J.A.R.V.I.S. AI Brain...');
 
