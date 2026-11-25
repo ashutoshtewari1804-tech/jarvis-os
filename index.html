@@ -813,7 +813,24 @@
     /* ====================================================================
        4. AI BRAIN COMMAND PROCESSOR & SELF-HEALING GEMINI ROUTER
        ==================================================================== */
-    async function processCommandWithAI(rawQuery) {
+    let isProcessingJarvisCommand = false;
+      let lastJarvisQuery = "";
+      let lastJarvisQueryTime = 0;
+
+      async function processCommandWithAI(rawQuery) {
+        const cleanQuery = (rawQuery || "").trim();
+        if (!cleanQuery) return;
+
+        const now = Date.now();
+        // Block duplicate or overlapping triggers within 3 seconds
+        if (isProcessingJarvisCommand || (cleanQuery.toLowerCase() === lastJarvisQuery && (now - lastJarvisQueryTime) < 3000)) {
+          console.warn("Blocked duplicate command trigger:", cleanQuery);
+          return;
+        }
+
+        isProcessingJarvisCommand = true;
+        lastJarvisQuery = cleanQuery.toLowerCase();
+        lastJarvisQueryTime = now;
       setOrbState('thinking');
       displayResponseCard('Analyzing command with J.A.R.V.I.S. AI Brain...');
 
@@ -861,6 +878,7 @@ Return ONLY a valid single-line JSON object (no markdown fences, escape newlines
         );
         executeAiAction(fallbackAction, rawQuery, []);
       } finally {
+        isProcessingJarvisCommand = false;
         if (state.orbState === 'thinking') {
           setOrbState('idle');
         }
