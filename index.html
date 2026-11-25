@@ -823,7 +823,7 @@
 
         const now = Date.now();
         // Block duplicate or overlapping triggers within 3 seconds
-        if (isProcessingJarvisCommand || (cleanQuery.toLowerCase() === lastJarvisQuery && (now - lastJarvisQueryTime) < 3000)) {
+        if (isProcessingJarvisCommand || (cleanQuery.toLowerCase() === lastJarvisQuery && (now - lastJarvisQueryTime) < 8000)) {
           console.warn("Blocked duplicate command trigger:", cleanQuery);
           return;
         }
@@ -1161,6 +1161,18 @@ Return ONLY a valid single-line JSON object (no markdown fences, escape newlines
     }
 
     // Fallback Offline Parser
+    if (lower.startsWith('open ') || lower.startsWith('launch ')) {
+  const targets = rawQuery.replace(/^(open|launch)\s+/i, '').split(/\s+and\s+|\s*,\s*/i).map(s => s.trim()).filter(Boolean);
+  return {
+    action: 'local_os',
+    bridge_payload: {
+      action: 'sequence',
+      steps: targets.map(t => ({ action: 'open_app', app: t }))
+    },
+    message: `Opening ${targets.join(' and ')}, Sir.`,
+    spoken_reply: `Opening ${targets.join(' and ')}, Sir.`
+  };
+}
     function fallbackCommandParser(rawQuery, aiReplyText) {
       const lower = rawQuery.toLowerCase();
 
